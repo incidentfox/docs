@@ -1,0 +1,280 @@
+---
+title: "Configuration Overview"
+description: "Understanding IncidentFox configuration hierarchy and options"
+---
+
+## Configuration Model
+
+IncidentFox uses a hierarchical configuration system that allows organizations to set defaults while enabling teams to customize their specific needs.
+
+### Hierarchy
+
+```
+Organization (root)
+    │
+    ├── Engineering Group
+    │       ├── Platform Team
+    │       └── Backend Team
+    │
+    └── Infrastructure Group
+            ├── SRE Team
+            └── DevOps Team
+```
+
+Configuration flows from top to bottom. Each level can:
+- **Inherit** settings from parent levels
+- **Override** specific settings
+- **Add** additional configuration
+
+### How Merging Works
+
+When IncidentFox loads a team's configuration, it:
+
+1. Starts with organization defaults
+2. Deep-merges each intermediate group's config
+3. Deep-merges the team's config
+4. Returns the final "effective config"
+
+<Info>
+Deep merge means nested objects are merged recursively, not replaced entirely. Arrays are typically replaced, not concatenated.
+</Info>
+
+### Example
+
+**Organization Config:**
+```json
+{
+  "mcp_servers": ["grafana", "aws"],
+  "agents": {
+    "investigation_agent": {
+      "prompt": "You are an SRE investigation agent for Acme Corp..."
+    }
+  },
+  "feature_flags": {
+    "enable_auto_mitigation": false
+  }
+}
+```
+
+**Team Config (Platform Team):**
+```json
+{
+  "mcp_servers": ["grafana", "aws", "coralogix"],
+  "agents": {
+    "investigation_agent": {
+      "enable_extra_tools": ["snowflake", "custom-runbooks"]
+    }
+  }
+}
+```
+
+**Effective Config for Platform Team:**
+```json
+{
+  "mcp_servers": ["grafana", "aws", "coralogix"],
+  "agents": {
+    "investigation_agent": {
+      "prompt": "You are an SRE investigation agent for Acme Corp...",
+      "enable_extra_tools": ["snowflake", "custom-runbooks"]
+    }
+  },
+  "feature_flags": {
+    "enable_auto_mitigation": false
+  }
+}
+```
+
+## Configuration Sections
+
+### Core Settings
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `team_name` | string | Display name (immutable at team level) |
+| `slack_channel` | string | Default Slack channel for notifications |
+| `slack_group_to_ping` | string | Group to mention (e.g., `@oncall-platform`) |
+
+### Agent Configuration
+
+Configure behavior for each agent type:
+
+```json
+{
+  "agents": {
+    "investigation_agent": {
+      "prompt": "Custom system prompt...",
+      "enabled": true,
+      "disable_default_tools": ["shell"],
+      "enable_extra_tools": ["custom-tool"]
+    }
+  }
+}
+```
+
+See [Agent Configuration](/configuration/agents) for details.
+
+### Tool Configuration
+
+Enable/disable and configure tools:
+
+```json
+{
+  "tools": {
+    "kubernetes": {
+      "enabled": true,
+      "default_namespace": "production"
+    },
+    "coralogix": {
+      "enabled": true,
+      "api_key": "vault://secrets/coralogix-api-key"
+    }
+  }
+}
+```
+
+See [Tool Configuration](/configuration/tools) for details.
+
+### MCP Servers
+
+Configure Model Context Protocol servers:
+
+```json
+{
+  "mcp_servers": ["grafana", "aws", "custom-server"]
+}
+```
+
+### Knowledge Sources
+
+Configure where agents look for documentation and runbooks:
+
+```json
+{
+  "knowledge_source": {
+    "grafana": ["prod-k8s", "prod-logs"],
+    "google": ["drive:folder/oncall-runbooks"],
+    "confluence": ["space:SRE"]
+  }
+}
+```
+
+### Feature Flags
+
+Control feature behavior:
+
+```json
+{
+  "feature_flags": {
+    "enable_auto_mitigation": false,
+    "enable_write_actions": true,
+    "require_approval": true
+  }
+}
+```
+
+### Alerts Configuration
+
+Customize alert handling:
+
+```json
+{
+  "alerts": {
+    "disabled": ["cpu_throttle_high", "disk_pressure"]
+  }
+}
+```
+
+## Managing Configuration
+
+### Via Web UI
+
+1. Log in to your IncidentFox dashboard
+2. Navigate to **Team Console** > **Configuration**
+3. Edit settings in the visual editor
+4. Save changes (may require approval if enabled)
+
+### Via API
+
+```bash
+# Get effective config
+curl -X GET https://api.incidentfox.ai/api/v1/config/me/effective \
+  -H "Authorization: Bearer $TEAM_TOKEN"
+
+# Update team config
+curl -X PUT https://api.incidentfox.ai/api/v1/config/me \
+  -H "Authorization: Bearer $TEAM_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mcp_servers": ["grafana", "aws", "coralogix"]
+  }'
+```
+
+### Viewing Raw Lineage
+
+To understand why a setting has a particular value:
+
+```bash
+curl -X GET https://api.incidentfox.ai/api/v1/config/me/raw \
+  -H "Authorization: Bearer $TEAM_TOKEN"
+```
+
+Returns:
+```json
+{
+  "lineage": ["org-root", "engineering-group", "platform-team"],
+  "configs": {
+    "org-root": { /* org config */ },
+    "engineering-group": { /* group config */ },
+    "platform-team": { /* team config */ }
+  }
+}
+```
+
+## Audit Trail
+
+All configuration changes are logged. View the audit history:
+
+```bash
+curl -X GET https://api.incidentfox.ai/api/v1/config/me/audit \
+  -H "Authorization: Bearer $TEAM_TOKEN"
+```
+
+Returns:
+```json
+[
+  {
+    "version": 5,
+    "changed_at": "2024-01-15T10:30:00Z",
+    "changed_by": "user@company.com",
+    "diff": {
+      "mcp_servers": {
+        "old": ["grafana", "aws"],
+        "new": ["grafana", "aws", "coralogix"]
+      }
+    }
+  }
+]
+```
+
+## Best Practices
+
+<Tip>
+**Start broad, refine narrow** - Set sensible defaults at the org level, then let teams customize as needed.
+</Tip>
+
+1. **Use org-level defaults** for common settings
+2. **Group by function** - Platform teams vs. application teams may need different configs
+3. **Minimize team overrides** - Only override what's truly team-specific
+4. **Use vault references** for secrets - Never store credentials in plain text
+5. **Enable approval workflows** for production teams
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Agent Configuration" icon="robot" href="/configuration/agents">
+    Configure agent behavior and prompts
+  </Card>
+  <Card title="Tool Configuration" icon="wrench" href="/configuration/tools">
+    Enable and configure tools
+  </Card>
+</CardGroup>

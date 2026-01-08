@@ -1,0 +1,289 @@
+---
+title: "Update Config"
+description: "Update your team's configuration"
+---
+
+## Endpoint
+
+```
+PUT /api/v1/config/me
+```
+
+Update the team's configuration overrides. Uses PATCH semantics - provided values are deep-merged with existing config.
+
+## Authentication
+
+<Note>
+Requires Team Token with write permissions.
+</Note>
+
+## Request
+
+### Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer YOUR_TOKEN` |
+| `Content-Type` | Yes | `application/json` |
+
+### Body
+
+Partial configuration object. Only include fields you want to change.
+
+## Request Example
+
+```bash
+curl -X PUT https://api.incidentfox.ai/api/v1/config/me \
+  -H "Authorization: Bearer $TEAM_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mcp_servers": ["grafana", "aws", "coralogix", "snowflake"],
+    "agents": {
+      "investigation_agent": {
+        "enable_extra_tools": ["snowflake", "custom-runbooks"]
+      }
+    }
+  }'
+```
+
+## Response
+
+### Success Response (200)
+
+```json
+{
+  "message": "Configuration updated successfully",
+  "version": 6,
+  "changed_fields": [
+    "mcp_servers",
+    "agents.investigation_agent.enable_extra_tools"
+  ],
+  "effective_config": {
+    "mcp_servers": ["grafana", "aws", "coralogix", "snowflake"],
+    "agents": {
+      "investigation_agent": {
+        "prompt": "You are an SRE investigation agent...",
+        "enable_extra_tools": ["snowflake", "custom-runbooks"]
+      }
+    }
+  }
+}
+```
+
+### Approval Required Response (202)
+
+When approval workflows are enabled:
+
+```json
+{
+  "message": "Configuration change submitted for approval",
+  "change_request_id": "cr_xyz789",
+  "status": "pending_approval",
+  "approvers": ["admin@company.com"],
+  "changes": {
+    "mcp_servers": {
+      "old": ["grafana", "aws", "coralogix"],
+      "new": ["grafana", "aws", "coralogix", "snowflake"]
+    }
+  }
+}
+```
+
+### Error Responses
+
+**400 Bad Request - Invalid Field**
+```json
+{
+  "error": {
+    "code": "invalid_field",
+    "message": "team_name is immutable and cannot be changed",
+    "field": "team_name"
+  }
+}
+```
+
+**400 Bad Request - Validation Error**
+```json
+{
+  "error": {
+    "code": "validation_error",
+    "message": "Invalid configuration value",
+    "details": {
+      "field": "agents.investigation_agent.timeout",
+      "error": "must be a positive integer"
+    }
+  }
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "error": {
+    "code": "forbidden",
+    "message": "Token does not have write permissions"
+  }
+}
+```
+
+## Immutable Fields
+
+These fields cannot be changed via API:
+
+- `team_name` - Set by admin only
+- `org_id` - Fixed at team creation
+- `team_node_id` - Fixed at team creation
+
+## Common Updates
+
+### Add MCP Server
+
+```json
+{
+  "mcp_servers": ["grafana", "aws", "coralogix", "new-server"]
+}
+```
+
+### Update Agent Prompt
+
+```json
+{
+  "agents": {
+    "investigation_agent": {
+      "prompt": "You are an SRE investigation agent for Acme Corp. Focus on database and payment issues first..."
+    }
+  }
+}
+```
+
+### Enable Additional Tools
+
+```json
+{
+  "agents": {
+    "investigation_agent": {
+      "enable_extra_tools": ["snowflake", "custom-tool"]
+    }
+  }
+}
+```
+
+### Disable Dangerous Tools
+
+```json
+{
+  "agents": {
+    "investigation_agent": {
+      "disable_default_tools": ["shell", "docker_exec"]
+    }
+  }
+}
+```
+
+### Update Slack Settings
+
+```json
+{
+  "slack_channel": "#new-incidents-channel",
+  "slack_group_to_ping": "@new-oncall-group"
+}
+```
+
+### Enable Feature Flags
+
+```json
+{
+  "feature_flags": {
+    "enable_auto_mitigation": true,
+    "require_approval": false
+  }
+}
+```
+
+## Code Examples
+
+### Python
+
+```python
+import requests
+
+def update_config(token, config_updates):
+    response = requests.put(
+        "https://api.incidentfox.ai/api/v1/config/me",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        },
+        json=config_updates
+    )
+    response.raise_for_status()
+    return response.json()
+
+# Add a new MCP server
+result = update_config(TEAM_TOKEN, {
+    "mcp_servers": ["grafana", "aws", "coralogix", "snowflake"]
+})
+print(f"Config version: {result['version']}")
+```
+
+### JavaScript
+
+```javascript
+async function updateConfig(token, updates) {
+  const response = await fetch(
+    'https://api.incidentfox.ai/api/v1/config/me',
+    {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updates)
+    }
+  );
+  return response.json();
+}
+
+const result = await updateConfig(TEAM_TOKEN, {
+  agents: {
+    investigation_agent: {
+      enable_extra_tools: ['snowflake']
+    }
+  }
+});
+```
+
+## Validation
+
+Before saving, the API validates:
+
+1. **Schema compliance** - Fields match expected types
+2. **Immutable fields** - Cannot change protected fields
+3. **Tool existence** - Enabled tools must exist
+4. **MCP server validity** - MCP servers must be configured
+
+## Approval Workflows
+
+If your organization has approval workflows enabled:
+
+1. Updates create a pending change request
+2. Admins are notified
+3. Once approved, config is applied
+4. Requester is notified
+
+Check pending changes:
+
+```
+GET /api/v1/config/me/pending
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Get Config" icon="sliders" href="/api-reference/config/effective">
+    View current configuration
+  </Card>
+  <Card title="Configuration Guide" icon="book" href="/configuration/overview">
+    Configuration documentation
+  </Card>
+</CardGroup>

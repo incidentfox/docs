@@ -1,0 +1,444 @@
+---
+title: "AWS"
+description: "Connect IncidentFox to AWS for CloudWatch, EC2, RDS, Lambda, and more"
+---
+
+## Overview
+
+AWS integration enables IncidentFox to access your AWS infrastructure for:
+
+- CloudWatch Logs and Metrics
+- EC2 instance status and details
+- RDS database monitoring
+- Lambda function analysis
+- ECS/Fargate task status
+- CodePipeline deployment tracking
+
+## Prerequisites
+
+- AWS account with IAM access
+- IAM role or user with appropriate permissions
+- Knowledge of your AWS region(s)
+
+## Configuration
+
+### Step 1: Create IAM Role (Recommended)
+
+Create an IAM role for IncidentFox to assume:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents",
+        "logs:StartQuery",
+        "logs:GetQueryResults"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchMetrics",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:GetMetricData",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics",
+        "cloudwatch:DescribeAlarms",
+        "cloudwatch:DescribeAlarmHistory"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceStatus",
+        "ec2:DescribeVolumes",
+        "ec2:DescribeNetworkInterfaces"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "RDS",
+      "Effect": "Allow",
+      "Action": [
+        "rds:DescribeDBInstances",
+        "rds:DescribeDBClusters",
+        "rds:DescribeEvents",
+        "pi:GetResourceMetrics"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Lambda",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:GetFunction",
+        "lambda:ListFunctions",
+        "lambda:GetFunctionConfiguration"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ECS",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:DescribeClusters",
+        "ecs:DescribeServices",
+        "ecs:DescribeTasks",
+        "ecs:ListTasks"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CodePipeline",
+      "Effect": "Allow",
+      "Action": [
+        "codepipeline:GetPipeline",
+        "codepipeline:GetPipelineState",
+        "codepipeline:GetPipelineExecution",
+        "codepipeline:ListPipelineExecutions"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+<Warning>
+Adjust the Resource ARNs to limit access to specific resources in production.
+</Warning>
+
+### Step 2: Configure Trust Policy
+
+If using cross-account access:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::INCIDENTFOX_ACCOUNT:role/incidentfox-agent"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
+### Step 3: Add to IncidentFox
+
+**Via Web UI:**
+
+1. Go to **Team Console** > **Integrations**
+2. Click **Add Integration** > **AWS**
+3. Enter:
+   - Region (primary)
+   - Authentication method (Role ARN or Access Keys)
+   - Role ARN (if using assume role)
+4. Click **Test Connection**
+5. Save
+
+**Via Configuration:**
+
+```json
+{
+  "tools": {
+    "aws": {
+      "enabled": true,
+      "region": "us-west-2",
+      "assume_role": "arn:aws:iam::123456789:role/incidentfox-readonly"
+    }
+  }
+}
+```
+
+For multiple regions:
+
+```json
+{
+  "tools": {
+    "aws": {
+      "enabled": true,
+      "regions": ["us-west-2", "us-east-1"],
+      "assume_role": "arn:aws:iam::123456789:role/incidentfox-readonly"
+    }
+  }
+}
+```
+
+## Available Tools
+
+### CloudWatch Logs
+
+#### `get_cloudwatch_logs`
+
+Fetch logs from CloudWatch Log Groups.
+
+```
+@incidentfox get cloudwatch logs for /aws/lambda/payments-processor from the last hour
+```
+
+**Parameters:**
+- `log_group` - Log group name
+- `filter_pattern` - CloudWatch filter pattern
+- `time_range` - Time range to search
+
+#### `query_cloudwatch_insights`
+
+Run CloudWatch Logs Insights queries.
+
+```
+@incidentfox run cloudwatch insights query to find error patterns in the last 24 hours
+```
+
+**Parameters:**
+- `log_groups` - Log groups to query
+- `query` - Insights query string
+- `time_range` - Time range
+
+**Example Query:**
+```sql
+fields @timestamp, @message
+| filter @message like /ERROR/
+| stats count(*) as errorCount by bin(1h)
+| sort @timestamp desc
+```
+
+### CloudWatch Metrics
+
+#### `get_cloudwatch_metrics`
+
+Query CloudWatch metrics.
+
+```
+@incidentfox get CPU utilization for the payments EC2 instances over the last 6 hours
+```
+
+**Parameters:**
+- `namespace` - Metric namespace (e.g., AWS/EC2)
+- `metric_name` - Metric name
+- `dimensions` - Dimension filters
+- `statistic` - Average, Sum, Maximum, etc.
+- `period` - Data point period in seconds
+
+### EC2
+
+#### `describe_ec2_instance`
+
+Get EC2 instance details and status.
+
+```
+@incidentfox describe EC2 instance i-0123456789abcdef0
+```
+
+**Parameters:**
+- `instance_id` - EC2 instance ID
+
+**Returns:**
+- Instance state
+- Instance type
+- Launch time
+- Security groups
+- Network interfaces
+- Tags
+
+### RDS
+
+#### `get_rds_instance_status`
+
+Check RDS database status and metrics.
+
+```
+@incidentfox check the status of the production RDS instance
+```
+
+**Parameters:**
+- `db_identifier` - RDS instance identifier
+
+**Returns:**
+- Instance status
+- Endpoint
+- Storage allocation
+- Recent events
+- Performance metrics
+
+### Lambda
+
+#### `describe_lambda_function`
+
+Get Lambda function configuration.
+
+```
+@incidentfox describe the payment-processor Lambda function
+```
+
+**Parameters:**
+- `function_name` - Lambda function name
+
+**Returns:**
+- Runtime
+- Memory configuration
+- Timeout
+- Environment variables
+- Last modified
+- Recent invocations
+
+### ECS
+
+#### `list_ecs_tasks`
+
+List ECS tasks in a cluster/service.
+
+```
+@incidentfox list ECS tasks for the checkout service
+```
+
+**Parameters:**
+- `cluster` - ECS cluster name
+- `service` - Service name (optional)
+- `status` - RUNNING, STOPPED, etc.
+
+### CodePipeline
+
+#### `describe_codepipeline`
+
+Get CodePipeline execution status.
+
+```
+@incidentfox check the status of the main deployment pipeline
+```
+
+**Parameters:**
+- `pipeline_name` - Pipeline name
+
+**Returns:**
+- Pipeline state
+- Stage statuses
+- Recent executions
+- Failed actions (if any)
+
+## Use Cases
+
+### Investigating Lambda Errors
+
+```
+@incidentfox investigate errors in the payment-processor Lambda
+
+IncidentFox will:
+1. Check Lambda function configuration
+2. Query CloudWatch Logs for errors
+3. Get invocation metrics
+4. Identify patterns
+```
+
+### RDS Performance Issues
+
+```
+@incidentfox check RDS performance for the production database
+
+IncidentFox will:
+1. Get RDS instance status
+2. Query Performance Insights metrics
+3. Check connection count
+4. Review recent events
+```
+
+### Deployment Tracking
+
+```
+@incidentfox did any CodePipeline deployments happen in the last 4 hours?
+
+IncidentFox will:
+1. List recent pipeline executions
+2. Show deployment status
+3. Correlate with any incidents
+```
+
+## Multi-Account Setup
+
+For organizations with multiple AWS accounts:
+
+```json
+{
+  "tools": {
+    "aws": {
+      "enabled": true,
+      "accounts": [
+        {
+          "name": "production",
+          "assume_role": "arn:aws:iam::111111111111:role/incidentfox",
+          "regions": ["us-west-2", "us-east-1"]
+        },
+        {
+          "name": "staging",
+          "assume_role": "arn:aws:iam::222222222222:role/incidentfox",
+          "regions": ["us-west-2"]
+        }
+      ]
+    }
+  }
+}
+```
+
+## Troubleshooting
+
+### Access Denied
+
+**Symptom:** "User is not authorized to perform this action"
+
+**Solutions:**
+1. Verify IAM policy attached to role
+2. Check trust relationship allows assume role
+3. Ensure resource ARNs match your resources
+
+### No Data Returned
+
+**Symptom:** Queries return empty results
+
+**Solutions:**
+1. Verify region is correct
+2. Check time range - CloudWatch has retention limits
+3. Confirm log group/metric names are exact
+
+### Throttling
+
+**Symptom:** "Rate exceeded" errors
+
+**Solutions:**
+1. Reduce query frequency
+2. Use broader time periods
+3. Request AWS quota increase
+
+## Best Practices
+
+<Tip>
+**Use CloudWatch Insights** for complex log analysis - it's faster and more powerful than filter patterns.
+</Tip>
+
+1. **Use resource tagging** - Tag resources to enable filtered queries
+2. **Set up log retention** - Ensure logs are retained long enough for investigations
+3. **Use cross-account roles** - Avoid using access keys
+4. **Enable Performance Insights** - For RDS debugging
+5. **Set up CloudWatch alarms** - So IncidentFox can reference them
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Kubernetes" icon="dharmachakra" href="/data-sources/kubernetes">
+    Connect K8s clusters
+  </Card>
+  <Card title="Datadog" icon="chart-area" href="/data-sources/datadog">
+    Set up Datadog
+  </Card>
+</CardGroup>

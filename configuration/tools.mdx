@@ -1,0 +1,297 @@
+---
+title: "Tool Configuration"
+description: "Enable, configure, and customize IncidentFox tools"
+---
+
+## Overview
+
+IncidentFox provides 50+ built-in tools across multiple categories. Each tool can be:
+
+- **Enabled/disabled** per team
+- **Configured** with credentials and settings
+- **Customized** with team-specific defaults
+
+## Tool Categories
+
+| Category | Tools | Description |
+|----------|-------|-------------|
+| Kubernetes | 9 | Pod logs, deployments, events, resource usage |
+| AWS | 8 | EC2, Lambda, RDS, ECS, CloudWatch |
+| Anomaly Detection | 8 | Prophet forecasting, Z-score, correlation |
+| Grafana | 6 | Dashboards, Prometheus queries, alerts |
+| Datadog | 3 | Metrics, logs, APM |
+| New Relic | 2 | NRQL queries, APM summary |
+| Coralogix | 4 | Log search, alerts, metrics |
+| Snowflake | 3 | SQL queries, data enrichment |
+| GitHub | 16 | Code search, PRs, issues, workflows |
+| Git | 12 | Status, diff, log, blame |
+| Docker | 15 | Build, run, logs, exec |
+| Elasticsearch | 3 | Log search, aggregations |
+| Slack | 5 | Messages, channels, threads |
+
+## Configuration Structure
+
+Tools are configured under the `tools` key:
+
+```json
+{
+  "tools": {
+    "kubernetes": {
+      "enabled": true,
+      "default_namespace": "production",
+      "kubeconfig_path": "/path/to/kubeconfig"
+    },
+    "coralogix": {
+      "enabled": true,
+      "api_key": "vault://secrets/coralogix-api-key",
+      "domain": "coralogix.com"
+    },
+    "snowflake": {
+      "enabled": true,
+      "account": "acme.us-west-2",
+      "warehouse": "COMPUTE_WH",
+      "credentials": "vault://secrets/snowflake"
+    }
+  }
+}
+```
+
+## Common Configuration Options
+
+### All Tools
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `enabled` | boolean | Enable/disable the tool |
+| `timeout` | integer | Max execution time in seconds |
+
+### Credentials
+
+Always use vault references for secrets:
+
+```json
+{
+  "api_key": "vault://path/to/secret",
+  "password": "vault://path/to/password"
+}
+```
+
+<Warning>
+Never store credentials in plain text. Always use vault references.
+</Warning>
+
+## Tool-Specific Configuration
+
+### Kubernetes
+
+```json
+{
+  "tools": {
+    "kubernetes": {
+      "enabled": true,
+      "kubeconfig_path": "~/.kube/config",
+      "default_namespace": "production",
+      "default_context": "prod-cluster",
+      "timeout": 30
+    }
+  }
+}
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `kubeconfig_path` | `~/.kube/config` | Path to kubeconfig file |
+| `default_namespace` | `default` | Default namespace for queries |
+| `default_context` | Current context | K8s context to use |
+| `timeout` | 30 | Command timeout in seconds |
+
+### AWS
+
+```json
+{
+  "tools": {
+    "aws": {
+      "enabled": true,
+      "region": "us-west-2",
+      "profile": "production",
+      "assume_role": "arn:aws:iam::123456789:role/incidentfox"
+    }
+  }
+}
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `region` | From env | AWS region |
+| `profile` | `default` | AWS profile name |
+| `assume_role` | None | IAM role ARN to assume |
+
+### Coralogix
+
+```json
+{
+  "tools": {
+    "coralogix": {
+      "enabled": true,
+      "api_key": "vault://secrets/coralogix-api-key",
+      "domain": "coralogix.com",
+      "default_application": "production",
+      "default_subsystem": "backend"
+    }
+  }
+}
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `api_key` | Yes | Coralogix API key |
+| `domain` | Yes | Coralogix domain (e.g., `coralogix.com`, `eu2.coralogix.com`) |
+| `default_application` | No | Default application filter |
+| `default_subsystem` | No | Default subsystem filter |
+
+### Snowflake
+
+```json
+{
+  "tools": {
+    "snowflake": {
+      "enabled": true,
+      "account": "acme.us-west-2",
+      "username": "vault://secrets/snowflake-user",
+      "password": "vault://secrets/snowflake-pass",
+      "warehouse": "COMPUTE_WH",
+      "database": "ANALYTICS",
+      "schema": "PUBLIC",
+      "role": "ANALYST"
+    }
+  }
+}
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `account` | Yes | Snowflake account identifier |
+| `username` | Yes | Username for authentication |
+| `password` | Yes | Password (use vault reference) |
+| `warehouse` | Yes | Default warehouse |
+| `database` | No | Default database |
+| `schema` | No | Default schema |
+| `role` | No | Snowflake role to use |
+
+### Datadog
+
+```json
+{
+  "tools": {
+    "datadog": {
+      "enabled": true,
+      "api_key": "vault://secrets/datadog-api-key",
+      "app_key": "vault://secrets/datadog-app-key",
+      "site": "datadoghq.com"
+    }
+  }
+}
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `api_key` | Yes | Datadog API key |
+| `app_key` | Yes | Datadog Application key |
+| `site` | No | Datadog site (default: `datadoghq.com`) |
+
+### Grafana
+
+```json
+{
+  "tools": {
+    "grafana": {
+      "enabled": true,
+      "url": "https://grafana.company.com",
+      "api_key": "vault://secrets/grafana-api-key",
+      "default_datasource": "Prometheus"
+    }
+  }
+}
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `url` | Yes | Grafana instance URL |
+| `api_key` | Yes | Grafana API key |
+| `default_datasource` | No | Default data source name |
+
+### GitHub
+
+```json
+{
+  "tools": {
+    "github": {
+      "enabled": true,
+      "token": "vault://secrets/github-token",
+      "default_org": "acme-corp",
+      "default_repo": "main-app"
+    }
+  }
+}
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `token` | Yes | GitHub Personal Access Token |
+| `default_org` | No | Default organization |
+| `default_repo` | No | Default repository |
+
+## Disabling Dangerous Tools
+
+For security, you may want to disable certain tools:
+
+```json
+{
+  "agents": {
+    "investigation_agent": {
+      "disable_default_tools": [
+        "shell",
+        "docker_exec",
+        "db_write",
+        "remediation_actions"
+      ]
+    }
+  }
+}
+```
+
+<Tip>
+Consider which tools are appropriate for each environment. Production may need stricter controls than staging.
+</Tip>
+
+## Tool Loading Priority
+
+When an agent needs a tool, the system checks:
+
+1. **Is the integration installed?** (package availability)
+2. **Are credentials configured?** (tool config + vault)
+3. **Is it enabled for this team?** (team config)
+4. **Is it allowed for this agent?** (agent config)
+
+All conditions must be met for the tool to be available.
+
+## Monitoring Tool Usage
+
+View tool usage metrics in the Web UI under **Team Console** > **Agent Runs**.
+
+Each investigation shows:
+- Which tools were invoked
+- Execution time per tool
+- Success/failure status
+- Tool output (redacted as needed)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Sources" icon="database" href="/data-sources/overview">
+    Detailed setup for each data source
+  </Card>
+  <Card title="Custom MCP Tools" icon="puzzle-piece" href="/tools/custom-mcp">
+    Add custom tools via MCP
+  </Card>
+</CardGroup>

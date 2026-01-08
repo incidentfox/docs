@@ -1,33 +1,187 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "API Introduction"
+description: "Overview of the IncidentFox REST API"
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+## Overview
 
-## Welcome
+The IncidentFox API provides programmatic access to:
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+- Trigger investigations
+- Manage team configuration
+- Query investigation history
+- Integrate with custom workflows
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+## Base URL
+
+```
+https://api.incidentfox.ai/api/v1
+```
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+All API endpoints require authentication via Bearer token.
+
+```bash
+curl -X GET https://api.incidentfox.ai/api/v1/config/me/effective \
+  -H "Authorization: Bearer YOUR_TEAM_TOKEN"
+```
+
+### Token Types
+
+| Type | Format | Scope |
+|------|--------|-------|
+| Team Token | `tokid.toksecret` | Team operations |
+| Admin Token | `admin.tokensecret` | Organization admin |
+| OIDC JWT | Standard JWT | SSO authenticated users |
+
+<Note>
+Team tokens are issued by your organization admin. Contact them if you need API access.
+</Note>
+
+## Response Format
+
+All responses are JSON:
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
+{
+  "data": { ... },
+  "meta": {
+    "request_id": "req_abc123",
+    "timestamp": "2024-01-15T10:30:00Z"
   }
-]
+}
 ```
+
+### Error Responses
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Invalid or expired token",
+    "request_id": "req_abc123"
+  }
+}
+```
+
+### HTTP Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Bad request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Not found |
+| 429 | Rate limited |
+| 500 | Server error |
+
+## Rate Limiting
+
+API requests are rate limited:
+
+| Endpoint Type | Limit |
+|--------------|-------|
+| Read operations | 100/minute |
+| Write operations | 20/minute |
+| Investigation triggers | 10/minute |
+
+Rate limit headers are included in responses:
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1705318260
+```
+
+## API Categories
+
+<CardGroup cols={2}>
+  <Card title="Agent API" icon="robot" href="/api-reference/agent/run">
+    Trigger and manage investigations
+  </Card>
+  <Card title="Config API" icon="sliders" href="/api-reference/config/effective">
+    Manage team configuration
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+### Trigger an Investigation
+
+```bash
+curl -X POST https://api.incidentfox.ai/api/v1/agents/run \
+  -H "Authorization: Bearer $TEAM_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_name": "planner",
+    "message": "Investigate high latency in payments service"
+  }'
+```
+
+### Get Team Configuration
+
+```bash
+curl -X GET https://api.incidentfox.ai/api/v1/config/me/effective \
+  -H "Authorization: Bearer $TEAM_TOKEN"
+```
+
+## SDKs
+
+Official SDKs are available:
+
+- **Python**: `pip install incidentfox`
+- **JavaScript**: `npm install @incidentfox/sdk`
+
+### Python Example
+
+```python
+from incidentfox import IncidentFoxClient
+
+client = IncidentFoxClient(token="YOUR_TEAM_TOKEN")
+
+# Trigger investigation
+result = client.investigate("High error rate in checkout service")
+print(result.summary)
+print(result.root_cause)
+
+# Get team config
+config = client.config.get_effective()
+print(config.mcp_servers)
+```
+
+## Webhooks
+
+Configure webhooks to receive investigation results:
+
+```json
+{
+  "webhooks": {
+    "investigation_complete": "https://your-app.com/webhooks/incidentfox"
+  }
+}
+```
+
+Webhook payload:
+
+```json
+{
+  "event": "investigation_complete",
+  "investigation_id": "inv_abc123",
+  "summary": "Root cause identified",
+  "root_cause": { ... },
+  "recommendations": [ ... ]
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/api-reference/authentication">
+    Detailed auth guide
+  </Card>
+  <Card title="Run Agent" icon="play" href="/api-reference/agent/run">
+    Trigger investigations
+  </Card>
+</CardGroup>

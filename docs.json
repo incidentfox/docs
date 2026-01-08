@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "IncidentFox",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#FF6B35",
+    "light": "#FF8C5A",
+    "dark": "#E55A2B"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -14,55 +14,79 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
               "index",
               "quickstart",
-              "development"
+              "how-it-works"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Configuration",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "configuration/overview",
+              "configuration/agents",
+              "configuration/tools",
+              "configuration/prompts"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Integrations",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "integrations/overview",
+              "integrations/slack",
+              "integrations/github",
+              "integrations/incident-io",
+              "integrations/pagerduty"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Data Sources",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "data-sources/overview",
+              "data-sources/coralogix",
+              "data-sources/snowflake",
+              "data-sources/aws",
+              "data-sources/datadog",
+              "data-sources/grafana",
+              "data-sources/kubernetes"
+            ]
+          },
+          {
+            "group": "Tools Catalog",
+            "pages": [
+              "tools/overview",
+              "tools/kubernetes",
+              "tools/aws",
+              "tools/observability",
+              "tools/github",
+              "tools/custom-mcp"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "API Documentation",
             "pages": [
-              "api-reference/introduction"
+              "api-reference/introduction",
+              "api-reference/authentication"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Agent API",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/agent/run",
+              "api-reference/agent/status"
+            ]
+          },
+          {
+            "group": "Config API",
+            "pages": [
+              "api-reference/config/effective",
+              "api-reference/config/update"
             ]
           }
         ]
@@ -71,14 +95,9 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Support",
+          "href": "mailto:support@incidentfox.ai",
+          "icon": "envelope"
         }
       ]
     }
@@ -91,32 +110,19 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@incidentfox.ai"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "href": "https://app.incidentfox.ai"
     }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/incidentfox",
+      "linkedin": "https://linkedin.com/company/incidentfox"
     }
   }
 }

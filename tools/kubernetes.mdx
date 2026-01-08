@@ -1,0 +1,294 @@
+---
+title: "Kubernetes Tools"
+description: "Tools for Kubernetes troubleshooting and monitoring"
+---
+
+## Overview
+
+The Kubernetes tools enable IncidentFox to troubleshoot pods, deployments, and services in your clusters.
+
+## Configuration
+
+```json
+{
+  "tools": {
+    "kubernetes": {
+      "enabled": true,
+      "kubeconfig_path": "~/.kube/config",
+      "default_namespace": "production",
+      "default_context": "prod-cluster"
+    }
+  }
+}
+```
+
+## Available Tools
+
+### `get_pod_logs`
+
+Fetch logs from a pod.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `pod_name` | string | Yes | Pod name or pattern |
+| `namespace` | string | No | Namespace (uses default) |
+| `container` | string | No | Container name |
+| `tail_lines` | int | No | Number of lines (default: 100) |
+| `since` | string | No | Time duration (e.g., "1h") |
+
+**Example:**
+```
+@incidentfox get logs from cart-pod in production namespace, last 50 lines
+```
+
+**Response:**
+```json
+{
+  "pod": "cart-7f9d8b6c4f-abc12",
+  "container": "cart",
+  "logs": [
+    "2024-01-15T10:30:00Z INFO Starting cart service",
+    "2024-01-15T10:30:01Z ERROR Connection refused to redis"
+  ]
+}
+```
+
+### `describe_pod`
+
+Get pod status and configuration.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `pod_name` | string | Yes | Pod name |
+| `namespace` | string | No | Namespace |
+
+**Example:**
+```
+@incidentfox describe cart-pod in production
+```
+
+**Response:**
+```json
+{
+  "name": "cart-7f9d8b6c4f-abc12",
+  "namespace": "production",
+  "status": "Running",
+  "node": "ip-10-0-1-123.ec2.internal",
+  "ip": "10.0.1.45",
+  "containers": [
+    {
+      "name": "cart",
+      "image": "acme/cart:v2.3.0",
+      "state": "Running",
+      "restarts": 0
+    }
+  ],
+  "conditions": [
+    {"type": "Ready", "status": "True"},
+    {"type": "ContainersReady", "status": "True"}
+  ]
+}
+```
+
+### `list_pods`
+
+List pods in a namespace with status.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `namespace` | string | No | Namespace |
+| `label_selector` | string | No | Label filter (e.g., "app=cart") |
+| `field_selector` | string | No | Field filter |
+
+**Example:**
+```
+@incidentfox list pods in production namespace with app=checkout label
+```
+
+### `get_pod_events`
+
+Get Kubernetes events for a pod or namespace.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | No | Resource name |
+| `namespace` | string | No | Namespace |
+| `type` | string | No | Normal, Warning |
+
+**Example:**
+```
+@incidentfox get warning events for cart pods
+```
+
+**Response:**
+```json
+{
+  "events": [
+    {
+      "type": "Warning",
+      "reason": "BackOff",
+      "message": "Back-off restarting failed container",
+      "last_timestamp": "2024-01-15T10:30:00Z",
+      "count": 5
+    }
+  ]
+}
+```
+
+### `describe_deployment`
+
+Get deployment status and configuration.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `deployment_name` | string | Yes | Deployment name |
+| `namespace` | string | No | Namespace |
+
+**Example:**
+```
+@incidentfox describe checkout deployment
+```
+
+### `get_deployment_history`
+
+View rollout history.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `deployment_name` | string | Yes | Deployment name |
+| `namespace` | string | No | Namespace |
+
+**Example:**
+```
+@incidentfox show rollout history for payments deployment
+```
+
+### `describe_service`
+
+Get service details and endpoints.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `service_name` | string | Yes | Service name |
+| `namespace` | string | No | Namespace |
+
+### `get_pod_resource_usage`
+
+Get CPU/memory usage for pods.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `namespace` | string | No | Namespace |
+| `pod_name` | string | No | Specific pod |
+
+<Note>
+Requires metrics-server installed in the cluster.
+</Note>
+
+**Example:**
+```
+@incidentfox check resource usage for checkout pods
+```
+
+**Response:**
+```json
+{
+  "pods": [
+    {
+      "name": "checkout-abc12",
+      "cpu": "250m",
+      "memory": "512Mi",
+      "cpu_request": "200m",
+      "memory_request": "256Mi",
+      "cpu_limit": "500m",
+      "memory_limit": "1Gi"
+    }
+  ]
+}
+```
+
+### `docker_exec`
+
+Execute commands in containers.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `pod_name` | string | Yes | Pod name |
+| `namespace` | string | No | Namespace |
+| `container` | string | No | Container name |
+| `command` | string | Yes | Command to execute |
+
+<Warning>
+This tool may be disabled by default for security. Enable only if needed.
+</Warning>
+
+## Use Cases
+
+### Investigating Pod Crashes
+
+```
+@incidentfox why is the cart pod crashing?
+```
+
+IncidentFox will:
+1. `list_pods` - Check pod status
+2. `get_pod_events` - Find crash reasons
+3. `get_pod_logs` - Read logs before crash
+4. `describe_pod` - Check configuration
+
+### Checking Resource Issues
+
+```
+@incidentfox check if checkout pods have resource issues
+```
+
+IncidentFox will:
+1. `get_pod_resource_usage` - Current usage
+2. `get_pod_events` - OOMKilled events
+3. `describe_deployment` - Configured limits
+
+### Verifying Deployments
+
+```
+@incidentfox verify the latest deployment of payments service
+```
+
+IncidentFox will:
+1. `describe_deployment` - Check status
+2. `get_deployment_history` - Recent rollouts
+3. `list_pods` - Pod status
+
+## Required RBAC
+
+```yaml
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "services", "events"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="AWS Tools" icon="aws" href="/tools/aws">
+    AWS infrastructure tools
+  </Card>
+  <Card title="Data Sources" icon="database" href="/data-sources/kubernetes">
+    Full K8s setup guide
+  </Card>
+</CardGroup>

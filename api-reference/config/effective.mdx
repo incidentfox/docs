@@ -1,0 +1,235 @@
+---
+title: "Get Effective Config"
+description: "Retrieve your team's effective configuration"
+---
+
+## Endpoint
+
+```
+GET /api/v1/config/me/effective
+```
+
+Returns the fully merged configuration for the authenticated team, including all inherited settings from organization and group levels.
+
+## Authentication
+
+<Note>
+Requires Team Token or Admin Token.
+</Note>
+
+## Request Example
+
+```bash
+curl -X GET https://api.incidentfox.ai/api/v1/config/me/effective \
+  -H "Authorization: Bearer $TEAM_TOKEN"
+```
+
+## Response
+
+### Success Response (200)
+
+```json
+{
+  "team_name": "platform-devops",
+  "tokens_vault_path": {
+    "openai_token": "vault://org/acme/teams/platform-devops/openai",
+    "slack_bot": "vault://org/acme/teams/platform-devops/slack-bot"
+  },
+  "mcp_servers": ["grafana", "aws", "coralogix"],
+  "a2a_agents": ["investigation", "code_fix"],
+  "slack_group_to_ping": "@platform-oncall",
+  "slack_channel": "#incidents-platform",
+  "knowledge_source": {
+    "grafana": ["dash/123", "dash/456"],
+    "google": ["drive:folder/abc"],
+    "confluence": ["space:PLAT:runbooks"]
+  },
+  "agents": {
+    "investigation_agent": {
+      "prompt": "You are an SRE investigation agent for Acme Corp...",
+      "enabled": true,
+      "disable_default_tools": [],
+      "enable_extra_tools": ["coralogix", "snowflake"]
+    },
+    "code_fix_agent": {
+      "prompt": "Provide minimal, safe hotfix suggestions",
+      "enabled": true,
+      "disable_default_tools": ["db-write"],
+      "enable_extra_tools": ["repo-read"]
+    }
+  },
+  "feature_flags": {
+    "enable_auto_mitigation": false,
+    "enable_write_actions": true,
+    "require_approval": true
+  },
+  "alerts": {
+    "disabled": ["cpu_throttle_high", "disk_pressure"]
+  },
+  "tools": {
+    "kubernetes": {
+      "enabled": true,
+      "default_namespace": "production"
+    },
+    "coralogix": {
+      "enabled": true,
+      "domain": "coralogix.com"
+    }
+  }
+}
+```
+
+## Understanding Effective Config
+
+The effective config is computed by merging configs from:
+
+1. **Organization defaults** (root level)
+2. **Group configs** (intermediate levels)
+3. **Team config** (leaf level)
+
+Later levels override earlier levels via deep merge.
+
+## Get Raw Config with Lineage
+
+To understand where settings come from:
+
+```
+GET /api/v1/config/me/raw
+```
+
+```bash
+curl -X GET https://api.incidentfox.ai/api/v1/config/me/raw \
+  -H "Authorization: Bearer $TEAM_TOKEN"
+```
+
+Response:
+
+```json
+{
+  "lineage": [
+    "org-acme",
+    "engineering-group",
+    "platform-team"
+  ],
+  "configs": {
+    "org-acme": {
+      "mcp_servers": ["grafana", "aws"],
+      "feature_flags": {
+        "enable_auto_mitigation": false
+      }
+    },
+    "engineering-group": {
+      "slack_channel": "#engineering-incidents"
+    },
+    "platform-team": {
+      "mcp_servers": ["grafana", "aws", "coralogix"],
+      "slack_channel": "#incidents-platform",
+      "agents": {
+        "investigation_agent": {
+          "enable_extra_tools": ["coralogix", "snowflake"]
+        }
+      }
+    }
+  }
+}
+```
+
+## Get Config Audit History
+
+View configuration change history:
+
+```
+GET /api/v1/config/me/audit
+```
+
+```bash
+curl -X GET "https://api.incidentfox.ai/api/v1/config/me/audit?limit=10" \
+  -H "Authorization: Bearer $TEAM_TOKEN"
+```
+
+Response:
+
+```json
+{
+  "history": [
+    {
+      "version": 5,
+      "changed_at": "2024-01-15T10:30:00Z",
+      "changed_by": "user@company.com",
+      "diff": {
+        "mcp_servers": {
+          "old": ["grafana", "aws"],
+          "new": ["grafana", "aws", "coralogix"]
+        }
+      },
+      "full_config": { ... }
+    },
+    {
+      "version": 4,
+      "changed_at": "2024-01-10T08:00:00Z",
+      "changed_by": "admin@company.com",
+      "diff": {
+        "agents.investigation_agent.prompt": {
+          "old": "You are an investigation agent...",
+          "new": "You are an SRE investigation agent..."
+        }
+      }
+    }
+  ]
+}
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | int | 50 | Number of entries |
+| `include_full` | bool | true | Include full config snapshot |
+
+## Code Examples
+
+### Python
+
+```python
+import requests
+
+def get_team_config(token):
+    response = requests.get(
+        "https://api.incidentfox.ai/api/v1/config/me/effective",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    response.raise_for_status()
+    return response.json()
+
+config = get_team_config(TEAM_TOKEN)
+print(f"MCP Servers: {config['mcp_servers']}")
+print(f"Slack Channel: {config['slack_channel']}")
+```
+
+### JavaScript
+
+```javascript
+async function getTeamConfig(token) {
+  const response = await fetch(
+    'https://api.incidentfox.ai/api/v1/config/me/effective',
+    {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+  );
+  return response.json();
+}
+
+const config = await getTeamConfig(TEAM_TOKEN);
+console.log('MCP Servers:', config.mcp_servers);
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Update Config" icon="edit" href="/api-reference/config/update">
+    Update team configuration
+  </Card>
+  <Card title="Run Agent" icon="play" href="/api-reference/agent/run">
+    Trigger investigations
+  </Card>
+</CardGroup>

@@ -1,80 +1,192 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "Quick Start"
+description: "Get IncidentFox investigating incidents in minutes"
 ---
 
-## Get started in three steps
+## Overview
 
-Get your documentation site running locally and make your first customization.
+This guide walks you through setting up IncidentFox for your team. By the end, you'll have an AI SRE agent ready to investigate incidents from Slack.
 
-### Step 1: Set up your local environment
+<Info>
+IncidentFox is deployed as a managed service. Contact your account team for access credentials and your team token.
+</Info>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Step 1: Get Your Credentials
 
-### Step 2: Deploy your changes
+After onboarding, you'll receive:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+- **Team Token** - Used to authenticate API requests
+- **Web UI Access** - Dashboard to configure agents and view investigation history
+- **Slack App** - Bot to install in your workspace
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+<Tip>
+Your team token follows the format `tokid.toksecret`. Keep it secure and never commit to version control.
+</Tip>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+## Step 2: Install the Slack Bot
 
-### Step 3: Go live
+The Slack bot is the primary interface for triggering investigations.
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+<Steps>
+  <Step title="Install the App">
+    Your IncidentFox admin will provide an installation link. Click it and authorize the app for your Slack workspace.
+  </Step>
+  <Step title="Invite to Channels">
+    Invite `@incidentfox` to channels where you want to trigger investigations:
+    ```
+    /invite @incidentfox
+    ```
+  </Step>
+  <Step title="Test the Connection">
+    Send a test message:
+    ```
+    @incidentfox hello
+    ```
+    The bot should respond confirming it's connected.
+  </Step>
+</Steps>
 
-## Next steps
+## Step 3: Configure Data Sources
 
-Now that you have your docs running, explore these key features:
+Connect IncidentFox to your observability stack to enable investigations.
 
-<CardGroup cols={2}>
+### Via Web UI
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+1. Log in to your IncidentFox dashboard
+2. Navigate to **Team Console** > **Integrations**
+3. Click **Add Integration** and select your data source
+4. Enter the required credentials
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+### Common Data Sources
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+| Platform | Required Credentials |
+|----------|---------------------|
+| Coralogix | API Key, Domain |
+| Snowflake | Account, Username, Password, Warehouse |
+| AWS | Access Key, Secret Key, Region |
+| Datadog | API Key, Application Key |
+| Grafana | URL, API Key |
+| GitHub | Personal Access Token |
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+See the [Data Sources](/data-sources/overview) section for detailed setup instructions for each platform.
 </Note>
+
+## Step 4: Enable Tools
+
+IncidentFox comes with 50+ built-in tools. Enable the ones relevant to your stack.
+
+In the Web UI:
+
+1. Go to **Team Console** > **Tools**
+2. Toggle on the tools you need
+3. Configure any tool-specific settings
+
+Example configuration:
+
+```json
+{
+  "tools": {
+    "kubernetes": {
+      "enabled": true,
+      "kubeconfig_path": "~/.kube/config"
+    },
+    "aws": {
+      "enabled": true,
+      "region": "us-west-2"
+    },
+    "coralogix": {
+      "enabled": true,
+      "api_key": "vault://secrets/coralogix"
+    }
+  }
+}
+```
+
+## Step 5: Start Investigating
+
+You're ready to go! Try these commands in Slack:
+
+### Basic Investigation
+
+```
+@incidentfox investigate high latency in the payments service
+```
+
+### Check Pod Status
+
+```
+@incidentfox check the status of cart pods in production
+```
+
+### Analyze CI Failure
+
+```
+@incidentfox why did the build fail on PR #123?
+```
+
+### Query Logs
+
+```
+@incidentfox search for errors in the checkout service logs from the last hour
+```
+
+## What Happens During an Investigation
+
+When you trigger an investigation, IncidentFox:
+
+1. **Acknowledges** - Reacts to your message to confirm it's working
+2. **Plans** - The Planner agent creates an investigation strategy
+3. **Gathers Data** - Pulls logs, metrics, and events from your data sources
+4. **Analyzes** - Correlates data to identify root cause
+5. **Reports** - Posts findings back to the Slack thread
+
+<Frame>
+  <img src="/images/investigation-flow.png" alt="Investigation Flow" />
+</Frame>
+
+## Example Investigation Output
+
+```json
+{
+  "summary": "Payment service experiencing elevated latency due to database connection pool exhaustion",
+  "root_cause": {
+    "description": "RDS connection pool at maximum capacity (100/100 connections)",
+    "confidence": 92,
+    "evidence": [
+      "CloudWatch RDS connections metric at 100%",
+      "Application logs show 'connection timeout' errors",
+      "Spike correlates with deployment at 14:32 UTC"
+    ]
+  },
+  "timeline": [
+    "14:32 - New deployment rolled out",
+    "14:35 - Connection count started increasing",
+    "14:42 - Connection pool exhausted",
+    "14:43 - Latency alerts fired"
+  ],
+  "affected_systems": ["payment-service", "checkout-service", "RDS primary"],
+  "recommendations": [
+    "Increase RDS max_connections parameter",
+    "Review connection pool settings in application config",
+    "Consider rolling back deployment if issue persists"
+  ]
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configure Agents" icon="robot" href="/configuration/agents">
+    Customize agent behavior with system prompts
+  </Card>
+  <Card title="Add Data Sources" icon="database" href="/data-sources/overview">
+    Connect all your observability tools
+  </Card>
+  <Card title="Set Up GitHub" icon="github" href="/integrations/github">
+    Enable CI/CD auto-fix capabilities
+  </Card>
+  <Card title="View Tools Catalog" icon="wrench" href="/tools/overview">
+    See all 50+ available tools
+  </Card>
+</CardGroup>

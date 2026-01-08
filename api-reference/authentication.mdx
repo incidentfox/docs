@@ -1,0 +1,220 @@
+---
+title: "Authentication"
+description: "Authenticate with the IncidentFox API"
+---
+
+## Overview
+
+IncidentFox supports multiple authentication methods:
+
+- **Team Tokens** - For programmatic team access
+- **Admin Tokens** - For organization administration
+- **OIDC/SSO** - For user authentication via identity provider
+
+## Team Tokens
+
+Team tokens provide access scoped to a specific team within an organization.
+
+### Token Format
+
+```
+tokid.toksecret
+```
+
+- `tokid` - Token identifier (public)
+- `toksecret` - Token secret (keep secure)
+
+### Usage
+
+Include in the `Authorization` header:
+
+```bash
+curl -X GET https://api.incidentfox.ai/api/v1/config/me/effective \
+  -H "Authorization: Bearer tokid.toksecret"
+```
+
+### Obtaining Tokens
+
+Team tokens are issued by your organization admin:
+
+1. Admin logs into Web UI
+2. Navigates to **Admin Console** > **Teams**
+3. Selects team and clicks **Generate Token**
+4. Token is displayed once - save it securely
+
+### Token Permissions
+
+Team tokens can:
+- Read team configuration
+- Update team configuration
+- Trigger investigations
+- View investigation history
+
+Team tokens cannot:
+- Access other teams
+- Modify organization settings
+- Create/delete teams
+
+## Admin Tokens
+
+Admin tokens provide organization-wide access.
+
+### Permissions
+
+Admin tokens can:
+- Manage all teams
+- View audit logs
+- Configure organization settings
+- Create/revoke team tokens
+
+### Usage
+
+```bash
+curl -X GET https://api.incidentfox.ai/api/v1/admin/teams \
+  -H "Authorization: Bearer admin.tokensecret"
+```
+
+## OIDC/SSO Authentication
+
+For user-based authentication via your identity provider.
+
+### Configuration
+
+Configure OIDC in organization settings:
+
+```json
+{
+  "oidc": {
+    "issuer": "https://login.company.com",
+    "client_id": "incidentfox-app",
+    "client_secret": "vault://secrets/oidc-secret"
+  }
+}
+```
+
+### Supported Providers
+
+- Google Workspace
+- Azure AD
+- Okta
+- Auth0
+- Generic OIDC
+
+### JWT Token Usage
+
+After OIDC authentication, use the JWT:
+
+```bash
+curl -X GET https://api.incidentfox.ai/api/v1/config/me/effective \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+## Identifying the Caller
+
+Use the `/auth/me` endpoint to identify the authenticated user/team:
+
+```bash
+curl -X GET https://api.incidentfox.ai/api/v1/auth/me \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+Response:
+
+```json
+{
+  "role": "team",
+  "auth_kind": "team_token",
+  "org_id": "org-acme",
+  "team_node_id": "team-platform",
+  "subject": null,
+  "email": null,
+  "can_write": true,
+  "permissions": ["team:read", "team:write"]
+}
+```
+
+For OIDC users:
+
+```json
+{
+  "role": "user",
+  "auth_kind": "oidc_jwt",
+  "org_id": "org-acme",
+  "team_node_id": null,
+  "subject": "user@company.com",
+  "email": "user@company.com",
+  "can_write": true,
+  "permissions": ["admin:read", "admin:write"]
+}
+```
+
+## Token Security
+
+<Warning>
+Treat tokens like passwords. Never commit to version control or share publicly.
+</Warning>
+
+### Best Practices
+
+1. **Store securely** - Use secrets managers
+2. **Rotate regularly** - Rotate tokens periodically
+3. **Use least privilege** - Use team tokens when admin isn't needed
+4. **Monitor usage** - Review audit logs for anomalies
+5. **Revoke unused** - Revoke tokens when no longer needed
+
+### Token Revocation
+
+Admins can revoke tokens:
+
+```bash
+curl -X POST https://api.incidentfox.ai/api/v1/admin/tokens/revoke \
+  -H "Authorization: Bearer admin.token" \
+  -H "Content-Type: application/json" \
+  -d '{"token_id": "tokid"}'
+```
+
+## Error Handling
+
+### Invalid Token
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Invalid or expired token"
+  }
+}
+```
+
+### Expired Token
+
+```json
+{
+  "error": {
+    "code": "token_expired",
+    "message": "Token has expired"
+  }
+}
+```
+
+### Insufficient Permissions
+
+```json
+{
+  "error": {
+    "code": "forbidden",
+    "message": "Token does not have permission for this operation"
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Run Agent" icon="play" href="/api-reference/agent/run">
+    Trigger investigations
+  </Card>
+  <Card title="Get Config" icon="sliders" href="/api-reference/config/effective">
+    Read team configuration
+  </Card>
+</CardGroup>

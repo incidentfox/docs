@@ -1,97 +1,117 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "IncidentFox"
+description: "AI-powered incident investigation and infrastructure automation"
 ---
 
-## Setting up
+# Welcome to IncidentFox
 
-Get your documentation site up and running in minutes.
+IncidentFox is an AI SRE / AI On-Call engineer that integrates with your observability stack, infrastructure, and collaboration tools to automatically investigate incidents, find root causes, and suggest fixes.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get IncidentFox up and running in minutes
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="How It Works" icon="brain" href="/how-it-works">
+    Understand the multi-agent architecture
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Configuration" icon="sliders" href="/configuration/overview">
+    Configure agents, tools, and prompts
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Integrations" icon="plug" href="/integrations/overview">
+    Connect to Slack, GitHub, PagerDuty, and more
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Key Features
 
-Everything you need to create world-class documentation.
+<AccordionGroup>
+  <Accordion title="Multi-Agent Architecture">
+    IncidentFox uses 6 specialized agents that work together:
+    - **Planner Agent** - Orchestrates investigations and delegates tasks
+    - **K8s Agent** - Kubernetes troubleshooting specialist
+    - **AWS Agent** - AWS resource debugging
+    - **Metrics Agent** - Anomaly detection and correlation
+    - **Coding Agent** - Code analysis and CI/CD fixes
+    - **Investigation Agent** - Comprehensive troubleshooting with 50+ tools
+  </Accordion>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+  <Accordion title="50+ Built-in Tools">
+    Pre-built integrations for your entire stack:
+    - **Kubernetes**: Pod logs, events, deployments, resource usage
+    - **AWS**: EC2, Lambda, RDS, ECS, CloudWatch
+    - **Observability**: Grafana, Datadog, New Relic, Coralogix
+    - **Code**: GitHub, Git, CI/CD pipelines
+    - **Data**: Snowflake, Elasticsearch
+  </Accordion>
 
-## Need inspiration?
+  <Accordion title="Multiple Trigger Sources">
+    Invoke IncidentFox from wherever your team works:
+    - **Slack** - Mention the bot in any channel
+    - **GitHub** - Comment on issues or PRs
+    - **PagerDuty** - Automatic investigation on alerts
+    - **Incident.io** - Integrated incident response
+    - **REST API** - Programmatic access
+  </Accordion>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+  <Accordion title="Enterprise Governance">
+    Built for enterprise security and compliance:
+    - SSO/OIDC authentication
+    - Role-based access control (RBAC)
+    - Approval workflows for changes
+    - Full audit logging
+    - Hierarchical team configuration
+  </Accordion>
+</AccordionGroup>
+
+## What Can IncidentFox Do?
+
+### Incident Investigation
+
+When an incident occurs, IncidentFox automatically:
+
+1. **Gathers Context** - Pulls logs, metrics, and recent changes from your observability stack
+2. **Analyzes Root Cause** - Correlates data across services to identify the issue
+3. **Provides Timeline** - Reconstructs what happened and when
+4. **Suggests Fixes** - Recommends actionable remediation steps
+
+```
+@incidentfox investigate why the payments service is slow
+```
+
+### CI/CD Auto-Fix
+
+When your CI pipeline fails, IncidentFox can:
+
+1. **Detect Failures** - Monitors GitHub Actions, CodePipeline, and other CI systems
+2. **Analyze Logs** - Reads test output and build errors
+3. **Identify Root Cause** - Correlates failures with code changes in the PR
+4. **Propose Fixes** - Suggests code changes to resolve the issue
+
+### Proactive Monitoring
+
+IncidentFox can monitor your systems and alert before issues escalate:
+
+- **Anomaly Detection** - Prophet-based forecasting identifies unusual patterns
+- **Correlation Analysis** - Links metrics across services to find relationships
+- **Knowledge Base** - Learns from your runbooks and past incidents
+
+## Getting Started
+
+<Steps>
+  <Step title="Connect Your Data Sources">
+    Configure connections to your observability stack (Coralogix, Datadog, Grafana, etc.)
+  </Step>
+  <Step title="Set Up Integrations">
+    Connect IncidentFox to Slack, GitHub, or PagerDuty for triggering investigations
+  </Step>
+  <Step title="Configure Your Team">
+    Customize agent prompts and enable/disable tools for your specific needs
+  </Step>
+  <Step title="Start Investigating">
+    Mention @incidentfox in Slack or trigger via your preferred integration
+  </Step>
+</Steps>
+
+## Support
+
+Need help? Contact us at [support@incidentfox.ai](mailto:support@incidentfox.ai)

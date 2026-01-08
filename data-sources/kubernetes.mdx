@@ -1,0 +1,177 @@
+---
+title: "Kubernetes"
+description: "Connect IncidentFox to your Kubernetes clusters"
+---
+
+## Overview
+
+Kubernetes integration enables IncidentFox to:
+
+- Fetch pod logs and events
+- Describe deployments, services, and pods
+- Check resource usage
+- Execute commands in containers (if permitted)
+
+## Prerequisites
+
+- Kubernetes cluster access
+- kubeconfig file or in-cluster configuration
+- RBAC permissions for IncidentFox service account
+
+## Configuration
+
+### Step 1: Create Service Account
+
+Create a service account with read permissions:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: incidentfox
+  namespace: incidentfox
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: incidentfox-reader
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "services", "events", "namespaces"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods", "nodes"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: incidentfox-reader
+subjects:
+- kind: ServiceAccount
+  name: incidentfox
+  namespace: incidentfox
+roleRef:
+  kind: ClusterRole
+  name: incidentfox-reader
+  apiGroup: rbac.authorization.k8s.io
+```
+
+### Step 2: Add to IncidentFox
+
+**Via Configuration:**
+
+```json
+{
+  "tools": {
+    "kubernetes": {
+      "enabled": true,
+      "kubeconfig_path": "~/.kube/config",
+      "default_namespace": "production",
+      "default_context": "prod-cluster"
+    }
+  }
+}
+```
+
+## Available Tools
+
+### `get_pod_logs`
+
+Fetch logs from pods.
+
+```
+@incidentfox get logs from the payments pod in production
+```
+
+**Parameters:**
+- `pod_name` - Pod name or pattern
+- `namespace` - Namespace
+- `container` - Container name (optional)
+- `tail_lines` - Number of lines
+- `since` - Time duration (e.g., "1h")
+
+### `describe_pod`
+
+Get pod details and status.
+
+```
+@incidentfox describe pod checkout-abc123 in production
+```
+
+### `list_pods`
+
+List pods with status.
+
+```
+@incidentfox list pods in the payments namespace
+```
+
+### `get_pod_events`
+
+Get Kubernetes events for pods.
+
+```
+@incidentfox get events for the cart deployment
+```
+
+### `describe_deployment`
+
+Get deployment status and replicas.
+
+```
+@incidentfox describe the payments deployment
+```
+
+### `get_pod_resource_usage`
+
+Check CPU and memory usage.
+
+```
+@incidentfox check resource usage for pods in production namespace
+```
+
+<Note>
+Requires metrics-server installed in the cluster.
+</Note>
+
+## Use Cases
+
+### Pod Crash Investigation
+
+```
+@incidentfox investigate why cart pods are crashing
+
+IncidentFox will:
+1. List pods and their status
+2. Get events showing crash reasons
+3. Fetch logs before crash
+4. Check resource usage
+5. Identify root cause
+```
+
+### Deployment Rollout Issues
+
+```
+@incidentfox check the payments deployment rollout status
+
+IncidentFox will:
+1. Describe deployment
+2. Check replica status
+3. Get events for issues
+4. Review pod logs
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="AWS" icon="aws" href="/data-sources/aws">
+    Connect AWS
+  </Card>
+  <Card title="Tools Catalog" icon="wrench" href="/tools/overview">
+    See all K8s tools
+  </Card>
+</CardGroup>

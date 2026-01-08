@@ -1,0 +1,283 @@
+---
+title: "GitHub"
+description: "Set up IncidentFox GitHub integration for CI/CD analysis"
+---
+
+## Overview
+
+The GitHub integration enables IncidentFox to:
+
+- Analyze CI/CD failures automatically
+- Investigate code-related issues
+- Correlate deployments with incidents
+- Propose fixes for failing tests
+
+## Prerequisites
+
+- GitHub repository admin access
+- IncidentFox account with GitHub integration enabled
+- GitHub Personal Access Token (PAT)
+
+## Setup
+
+### Step 1: Generate GitHub Token
+
+1. Go to GitHub **Settings** > **Developer settings** > **Personal access tokens**
+2. Click **Generate new token (classic)**
+3. Select scopes:
+   - `repo` - Full repository access
+   - `write:discussion` - Post comments
+   - `workflow` - Access GitHub Actions
+4. Copy the generated token
+
+<Warning>
+Use a service account rather than personal account for production.
+</Warning>
+
+### Step 2: Configure Webhook
+
+1. Go to your repository **Settings** > **Webhooks**
+2. Click **Add webhook**
+3. Configure:
+   - **Payload URL**: `https://api.incidentfox.ai/api/github/webhook`
+   - **Content type**: `application/json`
+   - **Secret**: Generate a random string
+4. Select events:
+   - Issue comments
+   - Pull request review comments
+   - Check runs (for CI/CD monitoring)
+5. Save
+
+### Step 3: Add to IncidentFox
+
+**Via Web UI:**
+
+1. Go to **Team Console** > **Integrations**
+2. Click **Add Integration** > **GitHub**
+3. Enter:
+   - Personal Access Token
+   - Webhook Secret
+   - Default Organization
+   - Default Repository
+4. Click **Test Connection**
+5. Save
+
+**Via Configuration:**
+
+```json
+{
+  "tools": {
+    "github": {
+      "enabled": true,
+      "token": "vault://secrets/github-token",
+      "webhook_secret": "vault://secrets/github-webhook-secret",
+      "default_org": "acme-corp",
+      "default_repo": "main-app"
+    }
+  }
+}
+```
+
+## Usage
+
+### Trigger Investigation from PR
+
+Comment on a Pull Request:
+
+```
+@incidentfox investigate why this test is failing
+```
+
+### Trigger from Issue
+
+Comment on an Issue:
+
+```
+@incidentfox analyze the authentication changes in this PR
+```
+
+### Auto-Fix CI Failures
+
+When a PR has failing checks:
+
+```
+@incidentfox fix the failing tests
+```
+
+IncidentFox will:
+1. Analyze the CI logs
+2. Identify the root cause
+3. Propose a fix
+4. Wait for approval before committing
+
+## CI/CD Monitoring
+
+### Automatic Investigation
+
+Configure IncidentFox to automatically investigate CI failures:
+
+```json
+{
+  "github": {
+    "auto_investigate_ci_failures": true,
+    "auto_investigate_repos": ["main-app", "api-service"],
+    "ci_failure_notification_channel": "#ci-failures"
+  }
+}
+```
+
+### Supported CI Systems
+
+| System | Status | Capabilities |
+|--------|--------|--------------|
+| GitHub Actions | Full | Logs, status, artifacts |
+| AWS CodePipeline | Full | Pipeline status, logs |
+| Jenkins | Basic | Build status via webhooks |
+| CircleCI | Basic | Status via webhooks |
+
+## Auto-Fix Workflow
+
+When IncidentFox identifies a fix:
+
+<Steps>
+  <Step title="Detection">
+    CI failure detected via webhook
+  </Step>
+  <Step title="Analysis">
+    Agent analyzes logs and code changes
+  </Step>
+  <Step title="Root Cause">
+    Identifies the specific breaking change
+  </Step>
+  <Step title="Proposal">
+    Posts proposed fix as a comment
+  </Step>
+  <Step title="Approval">
+    Waits for user to type `fix` to approve
+  </Step>
+  <Step title="Commit">
+    Pushes fix commit to the PR branch
+  </Step>
+</Steps>
+
+### Example Fix Flow
+
+**User comment:**
+```
+@incidentfox why is this PR failing?
+```
+
+**IncidentFox response:**
+```
+Investigation Complete
+
+The Cypress test is failing because the API endpoint changed:
+- Test expects: /api/data
+- Backend returns: /api/records
+
+Root Cause: Line 42 in src/api/index.js changed the endpoint path.
+
+Proposed Fix:
+- Update test file to use new endpoint path
+
+Type `fix` to apply this change automatically.
+```
+
+**User response:**
+```
+fix
+```
+
+**IncidentFox:**
+```
+Fix applied! Created commit abc123.
+Waiting for CI to complete...
+✅ All checks passed!
+```
+
+## Tools Available
+
+### `search_github_code`
+
+Search code across repositories.
+
+```
+@incidentfox search for payment processing logic in the codebase
+```
+
+### `read_github_file`
+
+Read specific file contents.
+
+```
+@incidentfox show me the contents of src/config/database.js
+```
+
+### `create_pull_request`
+
+Create PRs (with approval).
+
+```
+@incidentfox create a PR with the fix
+```
+
+### `list_pull_requests`
+
+List PRs in a repository.
+
+```
+@incidentfox show recent PRs for the api-service repo
+```
+
+### `get_github_actions_logs`
+
+Fetch CI/CD logs.
+
+```
+@incidentfox get the logs from the failing GitHub Actions run
+```
+
+## Best Practices
+
+<Tip>
+**Start with read-only access** and enable write operations only when comfortable with the auto-fix capabilities.
+</Tip>
+
+1. **Use specific repos** - Don't enable for all repos initially
+2. **Review fixes before applying** - Always verify proposed changes
+3. **Set up notifications** - Route CI failures to appropriate channels
+4. **Use branch protection** - Require review before merging auto-fixes
+
+## Security Considerations
+
+- Use fine-grained PATs when possible
+- Store tokens in secrets manager
+- Limit repository access scope
+- Enable audit logging for all actions
+- Require approval for write operations
+
+## Troubleshooting
+
+### Webhook Not Receiving
+
+1. Check webhook URL is correct
+2. Verify secret matches configuration
+3. Check GitHub webhook delivery logs
+4. Ensure network allows outbound to IncidentFox
+
+### Bot Not Commenting
+
+1. Verify PAT has `repo` scope
+2. Check bot has write access to repo
+3. Review webhook events enabled
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="PagerDuty" icon="bell" href="/integrations/pagerduty">
+    Auto-investigate alerts
+  </Card>
+  <Card title="Tools Catalog" icon="wrench" href="/tools/github">
+    See all GitHub tools
+  </Card>
+</CardGroup>

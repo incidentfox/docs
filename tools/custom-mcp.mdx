@@ -1,0 +1,299 @@
+---
+title: "Custom MCP Tools"
+description: "Extend IncidentFox with your own tools via Model Context Protocol"
+---
+
+## Overview
+
+The Model Context Protocol (MCP) allows you to add custom tools to IncidentFox. This enables integration with internal systems, custom runbooks, and proprietary data sources.
+
+## What is MCP?
+
+MCP is an open protocol that standardizes how AI agents access external tools and data sources. IncidentFox supports MCP servers, allowing you to:
+
+- Add tools for internal APIs
+- Integrate with custom databases
+- Access proprietary monitoring systems
+- Connect to internal runbook systems
+
+## Architecture
+
+```
+┌─────────────────┐     ┌─────────────────┐
+│   IncidentFox   │────▶│   MCP Server    │
+│     Agent       │     │  (Your Custom)  │
+└─────────────────┘     └────────┬────────┘
+                                 │
+                                 ▼
+                        ┌─────────────────┐
+                        │  Your Internal  │
+                        │    Systems      │
+                        └─────────────────┘
+```
+
+## Configuration
+
+### Adding an MCP Server
+
+```json
+{
+  "mcp_servers": [
+    {
+      "name": "internal-tools",
+      "url": "https://mcp.internal.company.com",
+      "auth": {
+        "type": "bearer",
+        "token": "vault://secrets/mcp-internal-token"
+      }
+    },
+    {
+      "name": "runbooks",
+      "url": "https://runbooks-mcp.company.com",
+      "auth": {
+        "type": "api_key",
+        "header": "X-API-Key",
+        "key": "vault://secrets/runbooks-api-key"
+      }
+    }
+  ]
+}
+```
+
+### Configuration Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `name` | string | Yes | Unique server name |
+| `url` | string | Yes | MCP server URL |
+| `auth` | object | No | Authentication config |
+| `timeout` | int | No | Request timeout (seconds) |
+| `enabled` | bool | No | Enable/disable server |
+
+## Building an MCP Server
+
+### Server Requirements
+
+Your MCP server must implement:
+
+1. **Tool Discovery** - `GET /tools` returns available tools
+2. **Tool Execution** - `POST /tools/{name}` executes a tool
+3. **Health Check** - `GET /health` for monitoring
+
+### Example Server (Python)
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class ToolDefinition(BaseModel):
+    name: str
+    description: str
+    parameters: dict
+
+class ToolRequest(BaseModel):
+    parameters: dict
+
+@app.get("/tools")
+def list_tools():
+    return [
+        {
+            "name": "search_runbooks",
+            "description": "Search internal runbooks for troubleshooting steps",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"},
+                    "service": {"type": "string", "description": "Service filter"}
+                },
+                "required": ["query"]
+            }
+        },
+        {
+            "name": "get_service_owners",
+            "description": "Get the team and oncall for a service",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "service": {"type": "string", "description": "Service name"}
+                },
+                "required": ["service"]
+            }
+        }
+    ]
+
+@app.post("/tools/search_runbooks")
+def search_runbooks(request: ToolRequest):
+    query = request.parameters.get("query")
+    service = request.parameters.get("service")
+
+    # Your implementation here
+    results = internal_search(query, service)
+
+    return {"results": results}
+
+@app.post("/tools/get_service_owners")
+def get_service_owners(request: ToolRequest):
+    service = request.parameters["service"]
+
+    # Your implementation here
+    owners = get_owners_from_db(service)
+
+    return {"team": owners["team"], "oncall": owners["oncall"]}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+```
+
+### Tool Definition Schema
+
+```json
+{
+  "name": "tool_name",
+  "description": "What the tool does",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "param1": {
+        "type": "string",
+        "description": "Parameter description"
+      }
+    },
+    "required": ["param1"]
+  }
+}
+```
+
+## Use Cases
+
+### Internal Runbook Search
+
+Create a tool that searches your internal knowledge base:
+
+```json
+{
+  "name": "search_runbooks",
+  "description": "Search internal runbooks for incident response procedures"
+}
+```
+
+**Usage:**
+```
+@incidentfox search runbooks for database failover procedure
+```
+
+### Service Catalog
+
+Create a tool that queries your service catalog:
+
+```json
+{
+  "name": "get_service_info",
+  "description": "Get service metadata including team, oncall, dependencies"
+}
+```
+
+**Usage:**
+```
+@incidentfox who owns the payments service and what are its dependencies?
+```
+
+### Custom Metrics
+
+Create a tool that queries proprietary metrics systems:
+
+```json
+{
+  "name": "query_custom_metrics",
+  "description": "Query internal metrics platform"
+}
+```
+
+### Approval Systems
+
+Create a tool that interacts with your change management system:
+
+```json
+{
+  "name": "check_recent_changes",
+  "description": "Check recent approved changes in ServiceNow"
+}
+```
+
+## Equipping Tools to Agents
+
+After configuring an MCP server, equip its tools to agents:
+
+```json
+{
+  "agents": {
+    "investigation_agent": {
+      "enable_extra_tools": [
+        "internal-tools:search_runbooks",
+        "internal-tools:get_service_info",
+        "runbooks:get_playbook"
+      ]
+    }
+  }
+}
+```
+
+Tool names use the format: `{mcp_server_name}:{tool_name}`
+
+## Security Considerations
+
+<Warning>
+MCP servers have direct access to your internal systems. Ensure proper security.
+</Warning>
+
+1. **Authentication** - Always use authentication
+2. **Network Security** - Run MCP servers in private networks
+3. **Input Validation** - Validate all parameters
+4. **Rate Limiting** - Implement rate limits
+5. **Audit Logging** - Log all tool invocations
+6. **Least Privilege** - Only expose necessary functionality
+
+## Monitoring MCP Servers
+
+Track MCP tool usage in IncidentFox:
+
+- Tool invocation counts
+- Latency by tool
+- Error rates
+- Most used tools
+
+View in **Team Console** > **Agent Runs**.
+
+## Troubleshooting
+
+### Connection Failed
+
+1. Verify URL is correct
+2. Check network connectivity
+3. Verify authentication credentials
+4. Check server health endpoint
+
+### Tool Not Found
+
+1. Verify tool is returned by `/tools`
+2. Check tool name matches exactly
+3. Ensure MCP server is enabled
+
+### Execution Errors
+
+1. Check parameter schema matches
+2. Review server logs
+3. Verify internal system connectivity
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="sliders" href="/configuration/overview">
+    Configure MCP servers
+  </Card>
+  <Card title="Tools Overview" icon="wrench" href="/tools/overview">
+    See all available tools
+  </Card>
+</CardGroup>

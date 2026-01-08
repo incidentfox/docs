@@ -1,0 +1,271 @@
+---
+title: "Agent Configuration"
+description: "Configure agent behavior, prompts, and tool access"
+---
+
+## Overview
+
+IncidentFox agents can be customized through configuration to:
+
+- Modify system prompts
+- Enable or disable specific tools
+- Add custom context about your infrastructure
+- Tune behavior for your team's needs
+
+## Agent Types
+
+| Agent | Purpose | Default Tools |
+|-------|---------|---------------|
+| `planner` | Orchestrate investigations | None (delegates to others) |
+| `k8s_agent` | Kubernetes troubleshooting | 9 K8s-specific tools |
+| `aws_agent` | AWS resource debugging | 8 AWS-specific tools |
+| `metrics_agent` | Anomaly detection | 22 metrics/analytics tools |
+| `coding_agent` | Code analysis | 15 code/git tools |
+| `investigation_agent` | Full toolkit investigations | 30+ tools from all categories |
+
+## Configuration Structure
+
+Each agent is configured under the `agents` key:
+
+```json
+{
+  "agents": {
+    "investigation_agent": {
+      "prompt": "System prompt for the agent...",
+      "enabled": true,
+      "disable_default_tools": ["shell", "docker_exec"],
+      "enable_extra_tools": ["custom-runbook-search"]
+    },
+    "code_fix_agent": {
+      "enabled": false
+    }
+  }
+}
+```
+
+## Configuration Options
+
+### `prompt`
+
+The system prompt that defines the agent's behavior, knowledge, and communication style.
+
+```json
+{
+  "agents": {
+    "investigation_agent": {
+      "prompt": "You are an AI SRE agent for Acme Corp. Our infrastructure runs on AWS EKS in us-west-2. Key services include: payments (critical), cart (high), catalog (medium). Always check CloudWatch metrics first, then pod logs. Escalate P1 incidents immediately to #incidents-critical."
+    }
+  }
+}
+```
+
+<Tip>
+**Include context about your infrastructure** in the prompt:
+- Service criticality tiers
+- Common failure patterns
+- Escalation procedures
+- Team-specific runbooks to reference
+</Tip>
+
+### `enabled`
+
+Toggle an agent on or off. Defaults to `true`.
+
+```json
+{
+  "agents": {
+    "code_fix_agent": {
+      "enabled": false
+    }
+  }
+}
+```
+
+### `disable_default_tools`
+
+Remove specific tools from an agent's default toolkit. Useful for security or compliance.
+
+```json
+{
+  "agents": {
+    "investigation_agent": {
+      "disable_default_tools": [
+        "shell",
+        "docker_exec",
+        "db_write"
+      ]
+    }
+  }
+}
+```
+
+<Warning>
+Disabling critical tools may impact investigation effectiveness. Test thoroughly before disabling in production.
+</Warning>
+
+### `enable_extra_tools`
+
+Add tools beyond the agent's default set.
+
+```json
+{
+  "agents": {
+    "investigation_agent": {
+      "enable_extra_tools": [
+        "coralogix",
+        "snowflake",
+        "custom-runbooks"
+      ]
+    }
+  }
+}
+```
+
+## Writing Effective Prompts
+
+### Structure
+
+A well-structured agent prompt includes:
+
+1. **Role definition** - What the agent is and does
+2. **Context** - Information about your infrastructure
+3. **Guidelines** - How to approach investigations
+4. **Constraints** - What to avoid or be careful about
+5. **Output format** - How to structure responses
+
+### Example: Investigation Agent
+
+```
+You are an AI SRE agent for Acme Corp's platform team.
+
+## Infrastructure Context
+- Cloud: AWS (us-west-2, us-east-1)
+- Orchestration: EKS (Kubernetes 1.28)
+- Key Services:
+  - payments-service (P0 - business critical)
+  - cart-service (P1 - customer facing)
+  - catalog-service (P2 - internal)
+  - analytics-service (P3 - batch processing)
+
+## Observability Stack
+- Logs: Coralogix (primary), CloudWatch (backup)
+- Metrics: Grafana Cloud + Prometheus
+- Traces: Datadog APM
+- Alerts: PagerDuty -> Slack #incidents
+
+## Investigation Guidelines
+1. Always start by identifying affected services and their criticality
+2. Check recent deployments (last 4 hours) first
+3. Query Coralogix for error logs before CloudWatch
+4. For database issues, check RDS Performance Insights
+5. Correlate with recent PRs merged to main
+
+## Response Format
+Always include:
+- Summary (1-2 sentences)
+- Root cause with confidence level
+- Evidence (specific logs, metrics, or events)
+- Timeline of events
+- Recommended actions with priority
+
+## Constraints
+- Never execute remediation without approval
+- Escalate P0/P1 incidents immediately
+- Don't access production databases directly
+```
+
+### Example: Slack Bot Agent
+
+```
+You are the IncidentFox Slack bot for Acme Corp.
+
+## Communication Style
+- Be concise and actionable
+- Use bullet points for multiple items
+- Include confidence levels when uncertain
+- Link to dashboards and runbooks when relevant
+
+## Quick Commands
+When users say:
+- "check [service]" -> Run health check on service
+- "logs [service]" -> Fetch recent error logs
+- "who's oncall" -> Check PagerDuty schedule
+- "deploy status" -> Check recent deployments
+
+## Escalation
+For P0/P1, immediately ping @oncall-platform and post to #incidents-critical.
+```
+
+## Agent Specialization
+
+### Creating Workflow-Specific Agents
+
+You can create specialized agents for different workflows:
+
+**CI/CD Investigation Agent:**
+```json
+{
+  "agents": {
+    "ci_investigation_agent": {
+      "prompt": "You specialize in CI/CD failures. Focus on: build logs, test output, dependency changes, environment differences between PR and main.",
+      "enable_extra_tools": ["github_actions", "codepipeline", "ecr"]
+    }
+  }
+}
+```
+
+**Database Investigation Agent:**
+```json
+{
+  "agents": {
+    "db_investigation_agent": {
+      "prompt": "You specialize in database performance issues. Check RDS metrics, slow query logs, connection pools, and recent schema changes.",
+      "enable_extra_tools": ["rds_insights", "pg_stat_statements", "snowflake"]
+    }
+  }
+}
+```
+
+## Tuning Tips
+
+### Improve Root Cause Accuracy
+
+1. **Add service dependencies** to the prompt
+2. **Include common failure patterns** you've seen
+3. **Specify data source priority** (which to check first)
+4. **Add context about recent changes** (migrations, refactors)
+
+### Reduce Investigation Time
+
+1. **Prioritize fast data sources** in the prompt
+2. **Include known quick wins** (common issues and solutions)
+3. **Set appropriate timeouts** for tool execution
+
+### Improve Response Quality
+
+1. **Define output format** explicitly
+2. **Include examples** of good responses
+3. **Specify confidence thresholds** for recommendations
+
+## Validation
+
+Before deploying prompt changes:
+
+1. **Test in staging** with known scenarios
+2. **Compare results** with previous prompt version
+3. **Check for regressions** in accuracy or speed
+
+<Note>
+If approval workflows are enabled, prompt changes require admin approval before taking effect.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tool Configuration" icon="wrench" href="/configuration/tools">
+    Configure and customize tools
+  </Card>
+  <Card title="Custom Prompts" icon="message" href="/configuration/prompts">
+    Advanced prompt engineering
+  </Card>
+</CardGroup>

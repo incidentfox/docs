@@ -1,0 +1,87 @@
+---
+title: "Grafana"
+description: "Connect IncidentFox to Grafana for dashboards and Prometheus queries"
+---
+
+## Overview
+
+Grafana integration enables IncidentFox to:
+
+- Query Prometheus metrics via Grafana
+- Access dashboard data
+- Retrieve alert status
+- Reference annotations
+
+## Prerequisites
+
+- Grafana instance (Cloud or self-hosted)
+- API key with Viewer permissions
+- Data sources configured in Grafana
+
+## Configuration
+
+### Step 1: Generate API Key
+
+1. Log in to Grafana
+2. Go to **Administration** > **Users and access** > **Service accounts**
+3. Create a new service account with **Viewer** role
+4. Generate a token for the service account
+
+### Step 2: Add to IncidentFox
+
+**Via Configuration:**
+
+```json
+{
+  "tools": {
+    "grafana": {
+      "enabled": true,
+      "url": "https://grafana.company.com",
+      "api_key": "vault://secrets/grafana-api-key",
+      "default_datasource": "Prometheus"
+    }
+  }
+}
+```
+
+## Available Tools
+
+### `grafana_query_prometheus`
+
+Query Prometheus via Grafana.
+
+```
+@incidentfox query prometheus for request_latency_seconds by service
+```
+
+**Parameters:**
+- `query` - PromQL query
+- `time_range` - Time range
+- `step` - Query step
+
+### `grafana_get_dashboard`
+
+Get dashboard panels and data.
+
+```
+@incidentfox get the production overview dashboard from Grafana
+```
+
+### `grafana_get_alerts`
+
+Check alert status.
+
+```
+@incidentfox show firing Grafana alerts
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Datadog" icon="chart-area" href="/data-sources/datadog">
+    Set up Datadog
+  </Card>
+  <Card title="Kubernetes" icon="dharmachakra" href="/data-sources/kubernetes">
+    Connect K8s
+  </Card>
+</CardGroup>

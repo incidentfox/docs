@@ -1,0 +1,213 @@
+---
+title: "Incident.io"
+description: "Integrate IncidentFox with Incident.io for automated incident response"
+---
+
+## Overview
+
+Incident.io integration enables IncidentFox to:
+
+- Automatically investigate when incidents are created
+- Post findings to incident channels
+- Enrich incident timelines with investigation data
+- Correlate incidents with recent changes
+
+## Prerequisites
+
+- Incident.io account with API access
+- Webhook configuration permissions
+- Slack integration configured (for responses)
+
+## Setup
+
+### Step 1: Configure Webhook
+
+1. Log in to Incident.io
+2. Go to **Settings** > **Integrations** > **Webhooks**
+3. Click **Add Webhook**
+4. Configure:
+   - **URL**: `https://api.incidentfox.ai/api/incident-io/webhook`
+   - **Events**: `incident.created`, `incident.updated`
+5. Copy the signing secret
+6. Save
+
+### Step 2: Add to IncidentFox
+
+```json
+{
+  "integrations": {
+    "incident_io": {
+      "enabled": true,
+      "webhook_secret": "vault://secrets/incident-io-webhook-secret",
+      "auto_investigate": true,
+      "severity_threshold": "high"
+    }
+  }
+}
+```
+
+### Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `auto_investigate` | Automatically start investigation | `true` |
+| `severity_threshold` | Minimum severity to auto-investigate | `medium` |
+| `post_to_channel` | Post findings to incident channel | `true` |
+| `create_timeline_entry` | Add to incident timeline | `true` |
+
+## How It Works
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│ Incident.io │────▶│ IncidentFox │────▶│   Slack     │
+│  Webhook    │     │   Agent     │     │  Channel    │
+└─────────────┘     └─────────────┘     └─────────────┘
+       │                   │                   ▲
+       │                   ▼                   │
+       │            ┌─────────────┐            │
+       │            │Data Sources │            │
+       │            └─────────────┘            │
+       │                   │                   │
+       └───────────────────┴───────────────────┘
+                   (findings)
+```
+
+1. **Incident created** in Incident.io
+2. **Webhook fires** to IncidentFox
+3. **Investigation starts** with incident context
+4. **Findings posted** to incident Slack channel
+5. **Timeline updated** with investigation summary
+
+## Automatic Investigation
+
+When an incident is created, IncidentFox:
+
+1. **Extracts context** from incident title and description
+2. **Identifies services** mentioned in the incident
+3. **Queries data sources** for relevant logs/metrics
+4. **Correlates with changes** in the last 4 hours
+5. **Posts findings** to the incident channel
+
+### Example
+
+**Incident created:**
+```
+Title: High error rate on checkout service
+Description: PagerDuty alert fired. Customers reporting failed checkouts.
+```
+
+**IncidentFox response (in incident channel):**
+```
+Investigation Started
+
+Context: High error rate detected on checkout-service
+Severity: High
+Investigating...
+
+---
+
+Preliminary Findings:
+
+Summary: Checkout service experiencing 503 errors due to
+upstream dependency failure.
+
+Root Cause (Confidence: 87%):
+• Payment gateway returning timeout errors
+• Started at 14:32 UTC
+• Correlates with payment-gateway deploy at 14:30
+
+Evidence:
+• Error logs: "upstream connect error: connection timeout"
+• 99.9th percentile latency: 30s (normal: 200ms)
+• Payment gateway pod restarted 3 times
+
+Recommended Actions:
+1. Check payment-gateway pod logs
+2. Consider rollback of payment-gateway deployment
+3. Enable circuit breaker if not already active
+
+Timeline:
+• 14:30 - payment-gateway v2.1.0 deployed
+• 14:32 - First timeout errors
+• 14:35 - Error rate exceeded threshold
+• 14:36 - PagerDuty alert fired
+• 14:36 - This incident created
+```
+
+## Timeline Integration
+
+IncidentFox can add entries to the Incident.io timeline:
+
+```json
+{
+  "integrations": {
+    "incident_io": {
+      "create_timeline_entry": true,
+      "timeline_entry_types": [
+        "investigation_start",
+        "root_cause_found",
+        "investigation_complete"
+      ]
+    }
+  }
+}
+```
+
+## Severity Mapping
+
+| Incident.io Severity | IncidentFox Priority |
+|---------------------|---------------------|
+| Critical | P0 |
+| High | P1 |
+| Medium | P2 |
+| Low | P3 |
+
+Configure severity threshold:
+
+```json
+{
+  "integrations": {
+    "incident_io": {
+      "severity_threshold": "medium",
+      "skip_low_severity": true
+    }
+  }
+}
+```
+
+## Best Practices
+
+<Tip>
+Set up IncidentFox investigation as one of your first actions in the incident workflow.
+</Tip>
+
+1. **Include service names** in incident titles
+2. **Add PagerDuty context** when creating incidents
+3. **Use structured descriptions** for better parsing
+4. **Review and iterate** on auto-investigation findings
+
+## Troubleshooting
+
+### Webhook Not Triggering
+
+1. Verify webhook URL is correct
+2. Check signing secret matches
+3. Review Incident.io webhook logs
+4. Ensure events are selected
+
+### Missing Findings
+
+1. Check data source connectivity
+2. Verify services are named correctly
+3. Review investigation logs in Web UI
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="PagerDuty" icon="bell" href="/integrations/pagerduty">
+    Connect PagerDuty
+  </Card>
+  <Card title="Slack" icon="slack" href="/integrations/slack">
+    Configure Slack responses
+  </Card>
+</CardGroup>

@@ -1,0 +1,260 @@
+---
+title: "How It Works"
+description: "Understanding IncidentFox's multi-agent architecture"
+---
+
+## Architecture Overview
+
+IncidentFox uses a multi-agent architecture where specialized AI agents collaborate to investigate incidents. Each agent has expertise in a specific domain and access to relevant tools.
+
+```
+                    ┌─────────────┐
+                    │   Planner   │  ← Orchestrates investigations
+                    │   Agent     │
+                    └──────┬──────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+        ▼                  ▼                  ▼
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│   K8s Agent   │  │   AWS Agent   │  │ Metrics Agent │
+│ (9 tools)     │  │ (8 tools)     │  │ (22 tools)    │
+└───────────────┘  └───────────────┘  └───────────────┘
+        │                  │                  │
+        ▼                  ▼                  ▼
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│ Coding Agent  │  │Investigation  │  │  (shared)     │
+│ (15 tools)    │  │    Agent      │  │ llm_call      │
+│               │  │ (30+ tools)   │  │ web_search    │
+└───────────────┘  └───────────────┘  └───────────────┘
+```
+
+## The Agents
+
+### Planner Agent
+
+The Planner is the orchestrator. When you trigger an investigation, it:
+
+1. **Analyzes the request** - Understands what you're asking
+2. **Creates a plan** - Determines which agents and tools are needed
+3. **Delegates tasks** - Assigns work to specialized agents
+4. **Synthesizes results** - Combines findings into a coherent response
+
+<Note>
+The Planner doesn't execute tools directly. It coordinates other agents that have the specialized capabilities.
+</Note>
+
+### K8s Agent
+
+Specializes in Kubernetes troubleshooting with 9 dedicated tools:
+
+| Tool | Description |
+|------|-------------|
+| `get_pod_logs` | Fetch container logs from pods |
+| `describe_pod` | Get pod status, events, and configuration |
+| `list_pods` | List pods in a namespace with status |
+| `get_pod_events` | Get Kubernetes events for pods |
+| `describe_deployment` | Get deployment status and replica info |
+| `get_deployment_history` | View rollout history |
+| `describe_service` | Get service details and endpoints |
+| `get_pod_resource_usage` | CPU/memory usage metrics |
+| `docker_exec` | Execute commands in containers |
+
+### AWS Agent
+
+Handles AWS infrastructure debugging with 8 tools:
+
+| Tool | Description |
+|------|-------------|
+| `describe_ec2_instance` | EC2 instance details and status |
+| `get_cloudwatch_logs` | Fetch logs from CloudWatch Log Groups |
+| `describe_lambda_function` | Lambda configuration and metrics |
+| `get_rds_instance_status` | RDS database status and metrics |
+| `query_cloudwatch_insights` | Run CloudWatch Insights queries |
+| `get_cloudwatch_metrics` | Query CloudWatch metrics |
+| `list_ecs_tasks` | List ECS Fargate tasks |
+| `describe_codepipeline` | Get CodePipeline execution status |
+
+### Metrics Agent
+
+Focuses on anomaly detection and correlation with 22 tools including:
+
+- **Anomaly Detection** - Prophet-based forecasting, Z-score detection
+- **Correlation Analysis** - Find relationships between metrics
+- **Change Point Detection** - Identify when metrics behavior changed
+- **Grafana Integration** - Query Prometheus, view dashboards
+
+### Coding Agent
+
+Handles code analysis and CI/CD with 15 tools:
+
+- **File Operations** - Read, search, and analyze code
+- **Git Operations** - Diff, blame, log analysis
+- **GitHub Integration** - PR analysis, code search
+- **Test Execution** - Run tests and analyze failures
+
+### Investigation Agent
+
+The "jack of all trades" agent with access to 30+ tools from all categories. Used for complex, cross-domain investigations that require multiple types of analysis.
+
+## Investigation Flow
+
+Here's what happens when you trigger an investigation:
+
+<Steps>
+  <Step title="Trigger Received">
+    User mentions `@incidentfox` in Slack with a request like "investigate high latency in payments service"
+  </Step>
+  <Step title="Planner Activates">
+    The Planner agent analyzes the request and determines:
+    - What systems might be involved (payments, database, etc.)
+    - What data sources to query (logs, metrics, recent changes)
+    - Which specialized agents to involve
+  </Step>
+  <Step title="Data Gathering">
+    Specialized agents execute their tools in parallel:
+    - K8s Agent checks pod status and logs
+    - AWS Agent queries CloudWatch metrics
+    - Metrics Agent runs anomaly detection
+  </Step>
+  <Step title="Correlation">
+    The Investigation Agent correlates findings:
+    - Timeline reconstruction
+    - Root cause identification
+    - Impact assessment
+  </Step>
+  <Step title="Response">
+    Results are synthesized and posted back to Slack with:
+    - Summary of findings
+    - Root cause with confidence score
+    - Evidence (logs, metrics, events)
+    - Recommended actions
+  </Step>
+</Steps>
+
+## Configuration Inheritance
+
+IncidentFox uses hierarchical configuration that flows from organization to team level:
+
+```
+Organization Defaults
+        │
+        ▼
+   Group Config (optional)
+        │
+        ▼
+    Team Config
+```
+
+Each level can override settings from the level above. This allows:
+
+- **Org-wide defaults** - Set sensible defaults for all teams
+- **Group-specific settings** - Configure for platform vs. application teams
+- **Team overrides** - Fine-tune for specific team needs
+
+### Example Configuration Flow
+
+```json
+// Organization level
+{
+  "mcp_servers": ["grafana", "aws"],
+  "agents": {
+    "investigation_agent": {
+      "prompt": "You are an SRE investigation agent..."
+    }
+  }
+}
+
+// Team level override
+{
+  "mcp_servers": ["grafana", "aws", "coralogix"],  // Added coralogix
+  "agents": {
+    "investigation_agent": {
+      "enable_extra_tools": ["snowflake"]  // Team-specific
+    }
+  }
+}
+```
+
+The team's effective config merges both, so they get:
+- All three MCP servers
+- The org's base prompt
+- The snowflake tool enabled
+
+## Data Flow
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Trigger   │────▶│   Agent     │────▶│   Tools     │
+│  (Slack,    │     │  Runtime    │     │  Execute    │
+│   GitHub)   │     │             │     │             │
+└─────────────┘     └──────┬──────┘     └──────┬──────┘
+                           │                   │
+                           ▼                   ▼
+                    ┌─────────────┐     ┌─────────────┐
+                    │   Config    │     │Data Sources │
+                    │   Service   │     │(Coralogix,  │
+                    │             │     │ Snowflake,  │
+                    │             │     │ AWS, etc.)  │
+                    └─────────────┘     └─────────────┘
+```
+
+1. **Triggers** send investigation requests to the Agent Runtime
+2. **Config Service** provides team-specific configuration
+3. **Tools** query external data sources
+4. **Results** flow back through the agent to the trigger source
+
+## Tool Loading
+
+Tools are loaded dynamically based on:
+
+1. **Installation** - Is the integration package installed?
+2. **Configuration** - Are credentials configured?
+3. **Team Settings** - Is the tool enabled for this team?
+
+```python
+# Example: Tool loading logic
+if is_integration_available("coralogix"):
+    if config.coralogix.api_key:
+        if "coralogix" not in config.disabled_tools:
+            load_coralogix_tools()
+```
+
+This means teams only see tools relevant to their stack.
+
+## MCP Integration
+
+IncidentFox supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for extending capabilities with custom tools.
+
+### What is MCP?
+
+MCP is an open protocol that allows AI agents to access external tools and data sources in a standardized way.
+
+### Using MCP with IncidentFox
+
+1. **Configure MCP servers** in the Web UI
+2. **Equip tools** to agents via configuration
+3. **Agents automatically** use MCP tools during investigations
+
+```json
+{
+  "mcp_servers": [
+    {
+      "name": "internal-tools",
+      "url": "mcps://tools.internal.company.com",
+      "auth": "vault://secrets/mcp-token"
+    }
+  ]
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="sliders" href="/configuration/overview">
+    Learn how to configure agents and tools
+  </Card>
+  <Card title="Data Sources" icon="database" href="/data-sources/overview">
+    Connect your observability stack
+  </Card>
+</CardGroup>

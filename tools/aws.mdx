@@ -1,0 +1,227 @@
+---
+title: "AWS Tools"
+description: "Tools for AWS infrastructure troubleshooting"
+---
+
+## Overview
+
+The AWS tools enable IncidentFox to access CloudWatch, EC2, RDS, Lambda, ECS, and CodePipeline.
+
+## Configuration
+
+```json
+{
+  "tools": {
+    "aws": {
+      "enabled": true,
+      "region": "us-west-2",
+      "assume_role": "arn:aws:iam::123456789:role/incidentfox"
+    }
+  }
+}
+```
+
+## Available Tools
+
+### `get_cloudwatch_logs`
+
+Fetch logs from CloudWatch Log Groups.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `log_group` | string | Yes | Log group name |
+| `filter_pattern` | string | No | CloudWatch filter |
+| `start_time` | string | No | Start time |
+| `end_time` | string | No | End time |
+| `limit` | int | No | Max events |
+
+**Example:**
+```
+@incidentfox get cloudwatch logs for /aws/lambda/payments with ERROR filter
+```
+
+### `query_cloudwatch_insights`
+
+Run CloudWatch Logs Insights queries.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `log_groups` | list | Yes | Log groups to query |
+| `query` | string | Yes | Insights query |
+| `start_time` | string | No | Start time |
+| `end_time` | string | No | End time |
+
+**Example:**
+```
+@incidentfox run insights query to find top errors by count in /aws/ecs/checkout
+```
+
+**Query Example:**
+```sql
+fields @timestamp, @message
+| filter @message like /ERROR/
+| stats count(*) by bin(1h)
+```
+
+### `get_cloudwatch_metrics`
+
+Query CloudWatch metrics.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `namespace` | string | Yes | Metric namespace |
+| `metric_name` | string | Yes | Metric name |
+| `dimensions` | dict | No | Dimension filters |
+| `statistic` | string | No | Average, Sum, Max |
+| `period` | int | No | Period in seconds |
+
+**Example:**
+```
+@incidentfox get CPUUtilization metric for EC2 instance i-abc123
+```
+
+### `describe_ec2_instance`
+
+Get EC2 instance details.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `instance_id` | string | Yes | EC2 instance ID |
+
+**Response:**
+```json
+{
+  "instance_id": "i-abc123",
+  "state": "running",
+  "type": "t3.large",
+  "launch_time": "2024-01-10T08:00:00Z",
+  "private_ip": "10.0.1.100",
+  "security_groups": ["sg-web", "sg-internal"]
+}
+```
+
+### `describe_lambda_function`
+
+Get Lambda function configuration.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `function_name` | string | Yes | Lambda function name |
+
+**Response:**
+```json
+{
+  "function_name": "payment-processor",
+  "runtime": "python3.11",
+  "memory": 256,
+  "timeout": 30,
+  "last_modified": "2024-01-15T10:00:00Z",
+  "code_size": 1024000
+}
+```
+
+### `get_rds_instance_status`
+
+Check RDS database status.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `db_identifier` | string | Yes | RDS instance ID |
+
+**Response:**
+```json
+{
+  "identifier": "prod-db",
+  "status": "available",
+  "engine": "postgres",
+  "version": "14.10",
+  "endpoint": "prod-db.xxx.us-west-2.rds.amazonaws.com",
+  "connections": 45,
+  "storage_used": "100GB"
+}
+```
+
+### `list_ecs_tasks`
+
+List ECS tasks in a cluster.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `cluster` | string | Yes | ECS cluster name |
+| `service` | string | No | Service name |
+| `status` | string | No | RUNNING, STOPPED |
+
+### `describe_codepipeline`
+
+Get CodePipeline execution status.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `pipeline_name` | string | Yes | Pipeline name |
+
+**Response:**
+```json
+{
+  "pipeline": "main-deploy",
+  "status": "InProgress",
+  "stages": [
+    {"name": "Source", "status": "Succeeded"},
+    {"name": "Build", "status": "Succeeded"},
+    {"name": "Deploy", "status": "InProgress"}
+  ],
+  "last_execution": "2024-01-15T14:30:00Z"
+}
+```
+
+## Use Cases
+
+### Lambda Error Investigation
+
+```
+@incidentfox investigate errors in payment-processor Lambda
+```
+
+IncidentFox will:
+1. `describe_lambda_function` - Check config
+2. `get_cloudwatch_logs` - Recent errors
+3. `get_cloudwatch_metrics` - Error rate, duration
+
+### RDS Performance Issues
+
+```
+@incidentfox check RDS performance for prod-db
+```
+
+IncidentFox will:
+1. `get_rds_instance_status` - Instance status
+2. `get_cloudwatch_metrics` - CPU, connections, IOPS
+3. Query Performance Insights if available
+
+### Deployment Tracking
+
+```
+@incidentfox check recent CodePipeline deployments
+```
+
+## Required IAM Permissions
+
+See [AWS Data Source](/data-sources/aws) for full IAM policy.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Observability Tools" icon="chart-line" href="/tools/observability">
+    Metrics and logging tools
+  </Card>
+  <Card title="AWS Setup" icon="aws" href="/data-sources/aws">
+    Full AWS configuration
+  </Card>
+</CardGroup>
