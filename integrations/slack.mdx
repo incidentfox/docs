@@ -1,0 +1,202 @@
+---
+title: "Slack"
+description: "Set up the IncidentFox Slack bot for investigations"
+---
+
+## Overview
+
+The Slack bot is the primary interface for triggering IncidentFox investigations. Mention the bot in any channel to start an investigation.
+
+## Prerequisites
+
+- Slack workspace admin access
+- IncidentFox account with Slack integration enabled
+
+## Setup
+
+### Step 1: Install the App
+
+Your IncidentFox admin will provide an installation link:
+
+```
+https://app.incidentfox.ai/integrations/slack/install
+```
+
+Click the link and authorize the app for your workspace.
+
+### Step 2: Configure Required Permissions
+
+The app requests these permissions:
+
+| Scope | Purpose |
+|-------|---------|
+| `chat:write` | Post investigation results |
+| `app_mentions:read` | Detect @incidentfox mentions |
+| `channels:history` | Read context from channel |
+| `groups:history` | Read context from private channels |
+| `im:history` | Read direct message context |
+| `reactions:write` | React to acknowledge messages |
+
+### Step 3: Invite to Channels
+
+Invite the bot to channels where you want to use it:
+
+```
+/invite @incidentfox
+```
+
+<Tip>
+Add the bot to your incident channels so it's ready when you need it.
+</Tip>
+
+### Step 4: Test the Connection
+
+Send a test message:
+
+```
+@incidentfox hello
+```
+
+The bot should respond with a confirmation.
+
+## Usage
+
+### Basic Investigation
+
+```
+@incidentfox investigate high latency in the payments service
+```
+
+### Check Specific Resources
+
+```
+@incidentfox check the status of cart pods in production namespace
+```
+
+### Query Logs
+
+```
+@incidentfox search for errors in checkout service logs from the last hour
+```
+
+### Get Help
+
+```
+@incidentfox help
+```
+
+## Response Format
+
+When you trigger an investigation, IncidentFox:
+
+1. Reacts with emoji to acknowledge
+2. Creates a thread for the response
+3. Posts structured findings:
+   - Summary
+   - Root cause
+   - Evidence
+   - Timeline
+   - Recommendations
+
+### Example Response
+
+```
+Investigation: High latency in payments service
+
+Summary: Payment service experiencing elevated latency due to
+database connection pool exhaustion.
+
+Root Cause:
+• Description: RDS connection pool at maximum capacity
+• Confidence: 92%
+• Evidence:
+  - CloudWatch RDS connections at 100%
+  - Application logs show "connection timeout"
+  - Spike correlates with deploy at 14:32
+
+Timeline:
+• 14:32 - New deployment rolled out
+• 14:35 - Connection count started increasing
+• 14:42 - Connection pool exhausted
+
+Recommendations:
+1. Increase max_connections parameter
+2. Review application pool settings
+3. Consider rollback if issue persists
+```
+
+## Configuration
+
+### Default Slack Channel
+
+Set a default channel for notifications:
+
+```json
+{
+  "slack_channel": "#incidents",
+  "slack_group_to_ping": "@oncall-platform"
+}
+```
+
+### Bot Response Style
+
+Configure in agent prompts how the bot communicates:
+
+```
+## Slack Communication Style
+- Be concise and actionable
+- Use bullet points for multiple items
+- Include confidence levels
+- Link to dashboards when relevant
+- Use thread replies for detailed info
+```
+
+## Commands Reference
+
+| Command | Description |
+|---------|-------------|
+| `@incidentfox investigate <issue>` | Full investigation |
+| `@incidentfox check <resource>` | Quick status check |
+| `@incidentfox logs <service>` | Fetch recent logs |
+| `@incidentfox metrics <service>` | Query metrics |
+| `@incidentfox help` | Show available commands |
+| `@incidentfox status` | Check agent status |
+
+## Troubleshooting
+
+### Bot Not Responding
+
+1. Verify bot is invited to the channel
+2. Check bot is online in Slack
+3. Ensure mention includes `@incidentfox`
+
+### Permission Errors
+
+1. Re-authorize the app
+2. Check channel permissions
+3. Verify bot token is valid
+
+### Slow Responses
+
+1. Complex investigations take 30-60 seconds
+2. Check data source connectivity
+3. Review configured timeout settings
+
+## Best Practices
+
+1. **Use dedicated channels** for incidents
+2. **Include context** in your request
+3. **Use threads** to keep conversations organized
+4. **React to helpful responses** to improve the model
+5. **Share dashboards** the bot references
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="/integrations/github">
+    Set up GitHub bot
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/configuration/overview">
+    Customize bot behavior
+  </Card>
+</CardGroup>

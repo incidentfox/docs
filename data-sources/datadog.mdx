@@ -1,0 +1,148 @@
+---
+title: "Datadog"
+description: "Connect IncidentFox to Datadog for metrics, logs, and APM"
+---
+
+## Overview
+
+Datadog integration enables IncidentFox to:
+
+- Query metrics and dashboards
+- Search logs
+- Access APM traces and service maps
+- Retrieve monitor/alert status
+
+## Prerequisites
+
+- Datadog account
+- API Key and Application Key
+- Read permissions for metrics, logs, and APM
+
+## Configuration
+
+### Step 1: Generate API Keys
+
+1. Log in to Datadog
+2. Go to **Organization Settings** > **API Keys**
+3. Click **New Key** to generate an API Key
+4. Go to **Application Keys** tab
+5. Click **New Key** to generate an Application Key
+
+<Note>
+The Application Key is tied to a user and determines permissions. Use a service account.
+</Note>
+
+### Step 2: Add to IncidentFox
+
+**Via Web UI:**
+
+1. Go to **Team Console** > **Integrations**
+2. Click **Add Integration** > **Datadog**
+3. Enter:
+   - API Key
+   - Application Key
+   - Site (e.g., datadoghq.com)
+4. Click **Test Connection**
+5. Save
+
+**Via Configuration:**
+
+```json
+{
+  "tools": {
+    "datadog": {
+      "enabled": true,
+      "api_key": "vault://secrets/datadog-api-key",
+      "app_key": "vault://secrets/datadog-app-key",
+      "site": "datadoghq.com"
+    }
+  }
+}
+```
+
+### Datadog Sites
+
+| Region | Site |
+|--------|------|
+| US1 | `datadoghq.com` |
+| US3 | `us3.datadoghq.com` |
+| US5 | `us5.datadoghq.com` |
+| EU | `datadoghq.eu` |
+| AP1 | `ap1.datadoghq.com` |
+
+## Available Tools
+
+### `query_datadog_metrics`
+
+Query metrics from Datadog.
+
+```
+@incidentfox query datadog metrics for avg:system.cpu.user by service in the last hour
+```
+
+**Parameters:**
+- `query` - Datadog metrics query
+- `from_time` - Start time (Unix timestamp or relative)
+- `to_time` - End time
+
+### `search_datadog_logs`
+
+Search logs in Datadog.
+
+```
+@incidentfox search datadog logs for status:error service:payments
+```
+
+**Parameters:**
+- `query` - Log search query
+- `indexes` - Log indexes to search
+- `time_range` - Time range
+
+### `get_service_apm_metrics`
+
+Get APM metrics for a service.
+
+```
+@incidentfox get APM metrics for the checkout service including error rate and latency
+```
+
+**Parameters:**
+- `service` - Service name
+- `env` - Environment (optional)
+- `time_range` - Time range
+
+## Use Cases
+
+### Investigating Service Latency
+
+```
+@incidentfox investigate high latency in payments service using Datadog
+
+IncidentFox will:
+1. Query APM latency metrics
+2. Get error rates
+3. Check for anomalies
+4. Review traces with high duration
+```
+
+### Log Analysis
+
+```
+@incidentfox search for exceptions in Datadog logs for checkout-api
+
+IncidentFox will:
+1. Search logs for error patterns
+2. Identify common stack traces
+3. Correlate with deployments
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Grafana" icon="chart-line" href="/data-sources/grafana">
+    Set up Grafana
+  </Card>
+  <Card title="Coralogix" icon="database" href="/data-sources/coralogix">
+    Configure Coralogix
+  </Card>
+</CardGroup>

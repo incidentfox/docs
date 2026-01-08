@@ -1,0 +1,243 @@
+---
+title: "PagerDuty"
+description: "Auto-investigate when PagerDuty alerts fire"
+---
+
+## Overview
+
+PagerDuty integration enables IncidentFox to:
+
+- Automatically investigate when alerts trigger
+- Post findings to configured Slack channels
+- Provide context before the oncall engineer responds
+- Correlate alerts with recent deployments
+
+## Prerequisites
+
+- PagerDuty account with admin access
+- Webhook configuration permissions
+- Slack integration configured (for responses)
+
+## Setup
+
+### Step 1: Create Generic Webhook
+
+1. Log in to PagerDuty
+2. Go to **Services** > Select your service
+3. Click **Integrations** tab
+4. Add **Generic Webhooks (v3)**
+5. Configure:
+   - **URL**: `https://api.incidentfox.ai/api/pagerduty/webhook`
+   - **Events**: `incident.triggered`, `incident.acknowledged`
+6. Copy the signing secret
+7. Save
+
+### Step 2: Add to IncidentFox
+
+```json
+{
+  "integrations": {
+    "pagerduty": {
+      "enabled": true,
+      "webhook_secret": "vault://secrets/pagerduty-webhook-secret",
+      "auto_investigate": true,
+      "notification_channel": "#incidents"
+    }
+  }
+}
+```
+
+### Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `auto_investigate` | Auto-start investigation on trigger | `true` |
+| `notification_channel` | Slack channel for findings | Required |
+| `urgency_filter` | Only investigate high urgency | `all` |
+| `service_filter` | List of services to investigate | All |
+
+## How It Works
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  PagerDuty  │────▶│ IncidentFox │────▶│   Slack     │
+│   Alert     │     │   Agent     │     │  Channel    │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+When a PagerDuty incident triggers:
+
+1. **Webhook fires** to IncidentFox
+2. **Agent extracts context** from alert details
+3. **Investigation runs** against configured data sources
+4. **Findings posted** to Slack before oncall responds
+
+## Automatic Investigation
+
+### Alert Context
+
+IncidentFox extracts from the PagerDuty webhook:
+
+- Service name
+- Alert title/description
+- Urgency level
+- Custom details (if provided)
+
+### Example Flow
+
+**PagerDuty Alert:**
+```
+Service: checkout-api
+Title: High Error Rate on checkout-api
+Urgency: High
+Details: Error rate exceeded 5% threshold
+```
+
+**IncidentFox Response (in #incidents):**
+```
+PagerDuty Alert Investigation
+
+Service: checkout-api
+Alert: High Error Rate
+Urgency: High
+
+Investigation Started...
+
+---
+
+Findings:
+
+Summary: Checkout API experiencing elevated 5xx errors
+due to database connection issues.
+
+Root Cause (Confidence: 91%):
+• RDS connection pool exhausted
+• 100/100 connections in use
+• New connections failing with timeout
+
+Evidence:
+• CloudWatch: RDS connections at max (100)
+• Application logs: "connection pool exhausted"
+• Error spike started 5 minutes ago
+
+Recent Changes:
+• checkout-api v2.3.0 deployed 15 minutes ago
+• Change: Added new batch processing job
+
+Recommendations:
+1. Check if new batch job is holding connections
+2. Consider increasing RDS max_connections
+3. Rollback v2.3.0 if issue persists
+
+Response Time: 23 seconds
+```
+
+## Service Configuration
+
+Configure per-service investigation:
+
+```json
+{
+  "integrations": {
+    "pagerduty": {
+      "services": {
+        "checkout-api": {
+          "investigation_prompt": "Focus on database and payment gateway issues",
+          "data_sources": ["coralogix", "rds", "grafana"],
+          "notification_channel": "#checkout-incidents"
+        },
+        "payments": {
+          "investigation_prompt": "Check PCI logs and card processor status",
+          "data_sources": ["coralogix", "cloudwatch"],
+          "notification_channel": "#payments-oncall"
+        }
+      }
+    }
+  }
+}
+```
+
+## Urgency Filtering
+
+Only investigate high urgency alerts:
+
+```json
+{
+  "integrations": {
+    "pagerduty": {
+      "urgency_filter": "high"
+    }
+  }
+}
+```
+
+## Enriching Alert Context
+
+Add custom details to your PagerDuty alerts for better investigations:
+
+```json
+{
+  "custom_details": {
+    "service": "checkout-api",
+    "environment": "production",
+    "namespace": "checkout",
+    "recent_deploy": "v2.3.0"
+  }
+}
+```
+
+IncidentFox will use these details to target the investigation.
+
+## Response Time
+
+Typical investigation times:
+
+| Alert Complexity | Response Time |
+|-----------------|---------------|
+| Single service | 15-30 seconds |
+| Multi-service | 30-60 seconds |
+| Complex correlation | 60-90 seconds |
+
+<Tip>
+IncidentFox aims to provide findings before the oncall engineer opens their laptop.
+</Tip>
+
+## Best Practices
+
+1. **Add custom details** to alerts for targeted investigations
+2. **Configure per-service** investigation prompts
+3. **Use dedicated channels** per service/team
+4. **Review investigation accuracy** to improve prompts
+5. **Combine with Incident.io** for full incident workflow
+
+## Troubleshooting
+
+### Webhook Not Triggering
+
+1. Check webhook URL is correct
+2. Verify signing secret matches
+3. Check PagerDuty webhook delivery logs
+4. Ensure incident.triggered event is enabled
+
+### Investigation Not Starting
+
+1. Check service is not in filter exclude list
+2. Verify urgency meets threshold
+3. Review agent logs in Web UI
+
+### Slow Investigations
+
+1. Reduce number of data sources queried
+2. Add more specific investigation prompts
+3. Check data source connectivity
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Incident.io" icon="siren" href="/integrations/incident-io">
+    Full incident workflow
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/configuration/overview">
+    Customize investigation behavior
+  </Card>
+</CardGroup>

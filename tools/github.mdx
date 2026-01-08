@@ -1,0 +1,255 @@
+---
+title: "GitHub Tools"
+description: "Tools for code search, PRs, issues, and GitHub Actions"
+---
+
+## Overview
+
+GitHub tools enable IncidentFox to search code, analyze PRs, and interact with CI/CD workflows.
+
+## Configuration
+
+```json
+{
+  "tools": {
+    "github": {
+      "enabled": true,
+      "token": "vault://secrets/github-token",
+      "default_org": "acme-corp"
+    }
+  }
+}
+```
+
+## Available Tools
+
+### Code Tools
+
+#### `search_github_code`
+
+Search code across repositories.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | Search query |
+| `repo` | string | No | Repository filter |
+| `language` | string | No | Language filter |
+
+**Example:**
+```
+@incidentfox search for payment processing error handling
+```
+
+#### `read_github_file`
+
+Read file contents from a repository.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository name |
+| `path` | string | Yes | File path |
+| `ref` | string | No | Branch/commit |
+
+### PR Tools
+
+#### `list_pull_requests`
+
+List PRs in a repository.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `state` | string | No | open, closed, all |
+| `base` | string | No | Base branch |
+
+#### `get_pull_request`
+
+Get PR details.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `pr_number` | int | Yes | PR number |
+
+#### `get_pr_diff`
+
+Get the diff for a PR.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `pr_number` | int | Yes | PR number |
+
+#### `create_pull_request`
+
+Create a new PR.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `title` | string | Yes | PR title |
+| `body` | string | Yes | PR description |
+| `head` | string | Yes | Head branch |
+| `base` | string | Yes | Base branch |
+
+<Warning>
+This tool requires write permissions and may be disabled by default.
+</Warning>
+
+### Issue Tools
+
+#### `list_issues`
+
+List repository issues.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `state` | string | No | open, closed |
+| `labels` | string | No | Label filter |
+
+#### `create_issue_comment`
+
+Add comment to an issue.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `issue_number` | int | Yes | Issue number |
+| `body` | string | Yes | Comment text |
+
+### GitHub Actions Tools
+
+#### `get_workflow_runs`
+
+List workflow runs.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `workflow_id` | string | No | Workflow file |
+| `status` | string | No | success, failure |
+
+#### `get_workflow_run_logs`
+
+Get logs from a workflow run.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `run_id` | int | Yes | Run ID |
+
+**Example:**
+```
+@incidentfox get logs from the failing GitHub Actions run
+```
+
+#### `get_check_runs`
+
+Get check runs for a commit.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `ref` | string | Yes | Commit SHA |
+
+### Git Tools
+
+#### `git_diff`
+
+Show changes between commits.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `base` | string | Yes | Base ref |
+| `head` | string | Yes | Head ref |
+
+#### `git_blame`
+
+Show who changed what in a file.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `path` | string | Yes | File path |
+
+#### `git_log`
+
+Show commit history.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repo` | string | Yes | Repository |
+| `path` | string | No | File path |
+| `since` | string | No | Start date |
+
+## Use Cases
+
+### CI Failure Analysis
+
+```
+@incidentfox why is the build failing on PR #123?
+```
+
+IncidentFox will:
+1. `get_pull_request` - Get PR details
+2. `get_check_runs` - Find failing checks
+3. `get_workflow_run_logs` - Get failure logs
+4. `get_pr_diff` - Analyze code changes
+5. Correlate to identify root cause
+
+### Deployment Correlation
+
+```
+@incidentfox what changed in the payments service recently?
+```
+
+IncidentFox will:
+1. `list_pull_requests` - Recent merged PRs
+2. `git_log` - Recent commits
+3. `get_pr_diff` - Changes in each PR
+
+### Code Investigation
+
+```
+@incidentfox find where database connections are configured
+```
+
+IncidentFox will:
+1. `search_github_code` - Find relevant files
+2. `read_github_file` - Read configuration
+3. `git_blame` - Find who last changed it
+
+## Required Token Scopes
+
+| Scope | Purpose |
+|-------|---------|
+| `repo` | Read code, PRs, issues |
+| `workflow` | Access GitHub Actions |
+| `write:discussion` | Post comments |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom MCP Tools" icon="puzzle-piece" href="/tools/custom-mcp">
+    Add your own tools
+  </Card>
+  <Card title="GitHub Integration" icon="github" href="/integrations/github">
+    Set up GitHub bot
+  </Card>
+</CardGroup>

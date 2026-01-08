@@ -1,0 +1,111 @@
+---
+title: "Integrations Overview"
+description: "Connect IncidentFox to your collaboration and incident management tools"
+---
+
+## Overview
+
+IncidentFox integrates with your existing collaboration and incident management tools to provide seamless investigation workflows.
+
+## Trigger Integrations
+
+These integrations allow you to invoke IncidentFox:
+
+| Integration | Trigger Method | Use Case |
+|-------------|---------------|----------|
+| [Slack](/integrations/slack) | @mention bot | General investigations, ad-hoc queries |
+| [GitHub](/integrations/github) | @mention in PR/issue | CI/CD failures, code-related issues |
+| [PagerDuty](/integrations/pagerduty) | Webhook on alert | Automatic incident investigation |
+| [Incident.io](/integrations/incident-io) | Webhook on incident | Integrated incident response |
+
+## Integration Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Trigger Sources                       │
+├───────────┬───────────┬───────────┬───────────┬─────────┤
+│   Slack   │  GitHub   │ PagerDuty │Incident.io│  API    │
+│   Bot     │   Bot     │  Webhook  │  Webhook  │  REST   │
+└─────┬─────┴─────┬─────┴─────┬─────┴─────┬─────┴────┬────┘
+      │           │           │           │          │
+      └───────────┴───────────┴───────────┴──────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │   IncidentFox   │
+                    │     Agent       │
+                    └────────┬────────┘
+                             │
+           ┌─────────────────┼─────────────────┐
+           │                 │                 │
+           ▼                 ▼                 ▼
+    ┌───────────┐     ┌───────────┐     ┌───────────┐
+    │Data Source│     │Data Source│     │Data Source│
+    │(Coralogix)│     │   (AWS)   │     │(Snowflake)│
+    └───────────┘     └───────────┘     └───────────┘
+```
+
+## Quick Setup
+
+<Steps>
+  <Step title="Choose Your Integrations">
+    Most teams start with Slack for general use, then add GitHub for CI/CD workflows.
+  </Step>
+  <Step title="Install the App">
+    Follow the setup guide for each integration to install the necessary apps/webhooks.
+  </Step>
+  <Step title="Configure Permissions">
+    Grant IncidentFox appropriate read permissions for your channels/repos.
+  </Step>
+  <Step title="Test the Connection">
+    Send a test message or trigger to verify the integration works.
+  </Step>
+</Steps>
+
+## Integration Comparison
+
+| Feature | Slack | GitHub | PagerDuty | Incident.io |
+|---------|-------|--------|-----------|-------------|
+| Manual trigger | Yes | Yes | No | No |
+| Auto-trigger on alert | No | No | Yes | Yes |
+| Response in same tool | Yes | Yes | Via Slack | Via Slack |
+| Rich formatting | Yes | Yes | Yes | Yes |
+| Thread support | Yes | Yes | N/A | N/A |
+| Requires webhook | No | Yes | Yes | Yes |
+
+## Recommended Setup
+
+### For General SRE Teams
+
+1. **Slack** - Primary interface for investigations
+2. **PagerDuty** - Auto-investigate on alerts
+3. **GitHub** - For deployment correlations
+
+### For Development Teams
+
+1. **Slack** - Quick queries and debugging
+2. **GitHub** - CI/CD failure analysis
+3. **PagerDuty** - Production alert context
+
+### For Platform Teams
+
+1. **Slack** - General investigations
+2. **Incident.io** - Formal incident response
+3. **All data sources** - Comprehensive access
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Slack" icon="slack" href="/integrations/slack">
+    Set up Slack bot
+  </Card>
+  <Card title="GitHub" icon="github" href="/integrations/github">
+    Configure GitHub integration
+  </Card>
+  <Card title="PagerDuty" icon="bell" href="/integrations/pagerduty">
+    Connect PagerDuty
+  </Card>
+  <Card title="Incident.io" icon="siren" href="/integrations/incident-io">
+    Set up Incident.io
+  </Card>
+</CardGroup>

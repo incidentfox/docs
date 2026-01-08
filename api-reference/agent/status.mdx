@@ -1,0 +1,192 @@
+---
+title: "Investigation Status"
+description: "Check the status of an investigation"
+---
+
+## Endpoint
+
+```
+GET /api/v1/agents/status/{investigation_id}
+```
+
+Get the status and results of an investigation.
+
+## Authentication
+
+<Note>
+Requires Team Token or Admin Token.
+</Note>
+
+## Path Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `investigation_id` | string | Yes | Investigation ID |
+
+## Request Example
+
+```bash
+curl -X GET https://api.incidentfox.ai/api/v1/agents/status/inv_abc123 \
+  -H "Authorization: Bearer $TEAM_TOKEN"
+```
+
+## Response
+
+### Running Investigation
+
+```json
+{
+  "investigation_id": "inv_abc123",
+  "status": "running",
+  "agent": "planner",
+  "message": "Investigate high latency in payments",
+  "progress": {
+    "current_step": "Querying CloudWatch metrics",
+    "steps_completed": 3,
+    "steps_total": 7
+  },
+  "started_at": "2024-01-15T14:45:00Z",
+  "elapsed_seconds": 15
+}
+```
+
+### Completed Investigation
+
+```json
+{
+  "investigation_id": "inv_abc123",
+  "status": "completed",
+  "agent": "planner",
+  "message": "Investigate high latency in payments",
+  "result": {
+    "summary": "Root cause identified as database connection pool exhaustion",
+    "root_cause": { ... },
+    "recommendations": [ ... ]
+  },
+  "tools_used": ["get_cloudwatch_logs", "get_pod_logs"],
+  "started_at": "2024-01-15T14:45:00Z",
+  "completed_at": "2024-01-15T14:45:45Z",
+  "duration_seconds": 45
+}
+```
+
+### Failed Investigation
+
+```json
+{
+  "investigation_id": "inv_abc123",
+  "status": "failed",
+  "agent": "planner",
+  "message": "Investigate high latency in payments",
+  "error": {
+    "code": "data_source_unavailable",
+    "message": "Unable to connect to Coralogix"
+  },
+  "started_at": "2024-01-15T14:45:00Z",
+  "failed_at": "2024-01-15T14:45:30Z"
+}
+```
+
+## Status Values
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Queued, not yet started |
+| `running` | Investigation in progress |
+| `completed` | Successfully completed |
+| `failed` | Investigation failed |
+| `cancelled` | Cancelled by user |
+
+## Polling Strategy
+
+For async investigations, poll with exponential backoff:
+
+```python
+import time
+import requests
+
+def wait_for_investigation(investigation_id, token, max_wait=300):
+    url = f"https://api.incidentfox.ai/api/v1/agents/status/{investigation_id}"
+    headers = {"Authorization": f"Bearer {token}"}
+
+    wait_time = 1
+    total_wait = 0
+
+    while total_wait < max_wait:
+        response = requests.get(url, headers=headers)
+        result = response.json()
+
+        if result["status"] in ["completed", "failed", "cancelled"]:
+            return result
+
+        time.sleep(wait_time)
+        total_wait += wait_time
+        wait_time = min(wait_time * 2, 10)  # Max 10 second intervals
+
+    raise TimeoutError("Investigation did not complete in time")
+```
+
+## List Recent Investigations
+
+```
+GET /api/v1/agents/investigations
+```
+
+List recent investigations for your team:
+
+```bash
+curl -X GET "https://api.incidentfox.ai/api/v1/agents/investigations?limit=10" \
+  -H "Authorization: Bearer $TEAM_TOKEN"
+```
+
+Response:
+
+```json
+{
+  "investigations": [
+    {
+      "investigation_id": "inv_abc123",
+      "status": "completed",
+      "agent": "planner",
+      "message": "Investigate high latency...",
+      "created_at": "2024-01-15T14:45:00Z"
+    },
+    {
+      "investigation_id": "inv_def456",
+      "status": "completed",
+      "agent": "k8s_agent",
+      "message": "Check pod status...",
+      "created_at": "2024-01-15T13:30:00Z"
+    }
+  ],
+  "pagination": {
+    "total": 42,
+    "limit": 10,
+    "offset": 0
+  }
+}
+```
+
+## Cancel Investigation
+
+```
+POST /api/v1/agents/status/{investigation_id}/cancel
+```
+
+Cancel a running investigation:
+
+```bash
+curl -X POST https://api.incidentfox.ai/api/v1/agents/status/inv_abc123/cancel \
+  -H "Authorization: Bearer $TEAM_TOKEN"
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Run Agent" icon="play" href="/api-reference/agent/run">
+    Trigger new investigation
+  </Card>
+  <Card title="Configuration" icon="sliders" href="/api-reference/config/effective">
+    Get team configuration
+  </Card>
+</CardGroup>

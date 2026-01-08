@@ -1,0 +1,243 @@
+---
+title: "Observability Tools"
+description: "Tools for metrics, logs, and traces from observability platforms"
+---
+
+## Overview
+
+Observability tools connect IncidentFox to your monitoring stack including Grafana, Datadog, Coralogix, and New Relic.
+
+## Grafana Tools
+
+### `grafana_query_prometheus`
+
+Query Prometheus metrics via Grafana.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | PromQL query |
+| `start` | string | No | Start time |
+| `end` | string | No | End time |
+| `step` | string | No | Query step |
+
+**Example:**
+```
+@incidentfox query prometheus for rate(http_requests_total[5m]) by service
+```
+
+### `grafana_get_dashboard`
+
+Get dashboard panels and data.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `dashboard_uid` | string | Yes | Dashboard UID |
+
+### `grafana_get_alerts`
+
+Check alert status.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `state` | string | No | alerting, ok, pending |
+
+## Datadog Tools
+
+### `query_datadog_metrics`
+
+Query Datadog metrics.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | Datadog metric query |
+| `from` | int | No | Start time (Unix) |
+| `to` | int | No | End time (Unix) |
+
+**Example:**
+```
+@incidentfox query datadog for avg:system.cpu.user{service:checkout}
+```
+
+### `search_datadog_logs`
+
+Search Datadog logs.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | Log search query |
+| `from` | string | No | Start time |
+| `to` | string | No | End time |
+| `limit` | int | No | Max results |
+
+### `get_service_apm_metrics`
+
+Get APM metrics for a service.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `service` | string | Yes | Service name |
+| `env` | string | No | Environment |
+
+## Coralogix Tools
+
+### `search_coralogix_logs`
+
+Search logs in Coralogix.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | Lucene query |
+| `application` | string | No | Application filter |
+| `subsystem` | string | No | Subsystem filter |
+| `start_time` | string | No | Start time |
+| `end_time` | string | No | End time |
+
+**Example:**
+```
+@incidentfox search coralogix for "error" AND "timeout" in payments application
+```
+
+### `get_coralogix_metrics`
+
+Query Coralogix metrics.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `metric_name` | string | Yes | Metric name |
+| `aggregation` | string | No | sum, avg, max |
+| `filters` | dict | No | Label filters |
+
+### `get_coralogix_alerts`
+
+Get recent alerts from Coralogix.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `severity` | string | No | Severity filter |
+| `status` | string | No | active, resolved |
+
+## New Relic Tools
+
+### `query_newrelic_nrql`
+
+Run NRQL queries.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | NRQL query |
+| `account_id` | string | No | Account ID |
+
+**Example:**
+```sql
+SELECT count(*) FROM Transaction
+WHERE appName = 'checkout'
+FACET error.class
+SINCE 1 hour ago
+```
+
+### `get_apm_summary`
+
+Get APM summary for an application.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `app_name` | string | Yes | Application name |
+
+## Anomaly Detection Tools
+
+These tools use Prophet and statistical methods:
+
+### `detect_anomalies`
+
+Detect anomalies in metric data.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `metric_data` | list | Yes | Time series data |
+| `sensitivity` | float | No | Detection sensitivity |
+
+### `correlate_metrics`
+
+Find correlations between metrics.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `metrics` | list | Yes | Metric queries |
+| `time_range` | string | No | Time range |
+
+### `find_change_points`
+
+Identify change points in metrics.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `metric_data` | list | Yes | Time series data |
+
+## Use Cases
+
+### Cross-Platform Investigation
+
+```
+@incidentfox investigate high latency using Grafana and Coralogix data
+```
+
+IncidentFox will:
+1. `grafana_query_prometheus` - Get latency metrics
+2. `search_coralogix_logs` - Find error patterns
+3. `correlate_metrics` - Link to other services
+4. `detect_anomalies` - Identify unusual patterns
+
+### Alert Investigation
+
+```
+@incidentfox get context for the Datadog alert on checkout service
+```
+
+## Configuration
+
+```json
+{
+  "tools": {
+    "grafana": {
+      "enabled": true,
+      "url": "https://grafana.company.com",
+      "api_key": "vault://secrets/grafana-key"
+    },
+    "datadog": {
+      "enabled": true,
+      "api_key": "vault://secrets/dd-api-key",
+      "app_key": "vault://secrets/dd-app-key"
+    },
+    "coralogix": {
+      "enabled": true,
+      "api_key": "vault://secrets/coralogix-key",
+      "domain": "coralogix.com"
+    }
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="GitHub Tools" icon="github" href="/tools/github">
+    Code and CI/CD tools
+  </Card>
+  <Card title="Custom MCP" icon="puzzle-piece" href="/tools/custom-mcp">
+    Add your own tools
+  </Card>
+</CardGroup>

@@ -1,0 +1,321 @@
+---
+title: "Snowflake"
+description: "Use Snowflake data to enrich incident investigations"
+---
+
+## Overview
+
+Snowflake integration allows IncidentFox to query historical data, enrichment tables, and analytics to provide deeper context during investigations.
+
+Common use cases:
+- Query historical incident patterns
+- Look up customer or service metadata
+- Access aggregated metrics not in real-time systems
+- Retrieve business context for impact assessment
+
+## Prerequisites
+
+- Snowflake account with API access
+- User account with SELECT permissions on relevant tables
+- Knowledge of your data schema
+
+## Configuration
+
+### Step 1: Create a Service Account
+
+1. Log in to Snowflake as an admin
+2. Create a dedicated user for IncidentFox:
+
+```sql
+-- Create user
+CREATE USER incidentfox_reader
+  PASSWORD = 'secure_password_here'
+  DEFAULT_ROLE = INCIDENTFOX_ROLE
+  DEFAULT_WAREHOUSE = COMPUTE_WH;
+
+-- Create role with limited permissions
+CREATE ROLE INCIDENTFOX_ROLE;
+
+-- Grant read access to relevant schemas
+GRANT USAGE ON WAREHOUSE COMPUTE_WH TO ROLE INCIDENTFOX_ROLE;
+GRANT USAGE ON DATABASE ANALYTICS TO ROLE INCIDENTFOX_ROLE;
+GRANT USAGE ON SCHEMA ANALYTICS.OBSERVABILITY TO ROLE INCIDENTFOX_ROLE;
+GRANT SELECT ON ALL TABLES IN SCHEMA ANALYTICS.OBSERVABILITY TO ROLE INCIDENTFOX_ROLE;
+GRANT SELECT ON FUTURE TABLES IN SCHEMA ANALYTICS.OBSERVABILITY TO ROLE INCIDENTFOX_ROLE;
+
+-- Assign role to user
+GRANT ROLE INCIDENTFOX_ROLE TO USER incidentfox_reader;
+```
+
+### Step 2: Identify Your Account
+
+Your Snowflake account identifier is in the format:
+```
+<account_name>.<region>
+```
+
+Example: `acme.us-west-2`
+
+### Step 3: Add to IncidentFox
+
+**Via Web UI:**
+
+1. Go to **Team Console** > **Integrations**
+2. Click **Add Integration** > **Snowflake**
+3. Enter:
+   - Account identifier
+   - Username
+   - Password (or key pair)
+   - Default warehouse
+   - Default database (optional)
+   - Default schema (optional)
+4. Click **Test Connection**
+5. Save
+
+**Via Configuration:**
+
+```json
+{
+  "tools": {
+    "snowflake": {
+      "enabled": true,
+      "account": "acme.us-west-2",
+      "username": "vault://secrets/snowflake-user",
+      "password": "vault://secrets/snowflake-pass",
+      "warehouse": "COMPUTE_WH",
+      "database": "ANALYTICS",
+      "schema": "OBSERVABILITY",
+      "role": "INCIDENTFOX_ROLE"
+    }
+  }
+}
+```
+
+## Available Tools
+
+### `query_snowflake`
+
+Execute SQL queries against Snowflake.
+
+```
+@incidentfox query snowflake for error counts by service in the last 7 days
+```
+
+**Parameters:**
+- `query` - SQL query to execute
+- `warehouse` - Warehouse to use (optional, uses default)
+- `timeout` - Query timeout in seconds
+
+### `get_snowflake_schema`
+
+Retrieve table schemas for query building.
+
+```
+@incidentfox show the schema for the error_logs table in snowflake
+```
+
+## Example Queries
+
+### Historical Error Patterns
+
+```sql
+SELECT
+  service_name,
+  error_type,
+  COUNT(*) as error_count,
+  DATE_TRUNC('hour', timestamp) as hour
+FROM analytics.observability.error_logs
+WHERE timestamp > DATEADD('day', -7, CURRENT_TIMESTAMP())
+GROUP BY service_name, error_type, hour
+ORDER BY hour DESC, error_count DESC
+LIMIT 100
+```
+
+### Customer Impact Assessment
+
+```sql
+SELECT
+  customer_tier,
+  COUNT(DISTINCT customer_id) as affected_customers,
+  SUM(transaction_value) as affected_revenue
+FROM analytics.business.transactions t
+JOIN analytics.business.customers c ON t.customer_id = c.id
+WHERE t.service = 'payments'
+  AND t.status = 'failed'
+  AND t.timestamp > DATEADD('hour', -1, CURRENT_TIMESTAMP())
+GROUP BY customer_tier
+```
+
+### Deployment Correlation
+
+```sql
+SELECT
+  d.service,
+  d.version,
+  d.deployed_at,
+  COUNT(e.id) as errors_after_deploy
+FROM analytics.devops.deployments d
+LEFT JOIN analytics.observability.errors e
+  ON e.service = d.service
+  AND e.timestamp BETWEEN d.deployed_at AND DATEADD('hour', 4, d.deployed_at)
+WHERE d.deployed_at > DATEADD('day', -1, CURRENT_TIMESTAMP())
+GROUP BY d.service, d.version, d.deployed_at
+ORDER BY d.deployed_at DESC
+```
+
+## Use Cases
+
+### Enriching Incident Context
+
+When investigating an incident, IncidentFox can query Snowflake to:
+
+1. **Get historical baseline** - "Is this error rate normal?"
+2. **Identify patterns** - "Has this happened before?"
+3. **Assess business impact** - "How many customers are affected?"
+4. **Correlate with changes** - "What deployed recently?"
+
+### Example Investigation Flow
+
+```
+User: @incidentfox investigate high error rate in checkout
+
+IncidentFox:
+1. Queries Coralogix for current errors
+2. Queries Snowflake for historical error baseline
+3. Queries Snowflake for recent deployments
+4. Correlates findings
+
+Result: "Error rate is 10x normal baseline. This matches a pattern
+seen after v2.3.1 deployment last month. Current deployment v2.5.0
+went out 45 minutes ago. Recommend rollback."
+```
+
+## Recommended Tables
+
+For optimal IncidentFox usage, consider creating these Snowflake tables:
+
+### Error Summary Table
+
+```sql
+CREATE TABLE analytics.observability.error_summary (
+  timestamp TIMESTAMP,
+  service VARCHAR,
+  error_type VARCHAR,
+  error_count INTEGER,
+  affected_users INTEGER,
+  PRIMARY KEY (timestamp, service, error_type)
+);
+```
+
+### Deployment History
+
+```sql
+CREATE TABLE analytics.devops.deployments (
+  id VARCHAR PRIMARY KEY,
+  service VARCHAR,
+  version VARCHAR,
+  deployed_at TIMESTAMP,
+  deployed_by VARCHAR,
+  commit_sha VARCHAR,
+  rollback_of VARCHAR
+);
+```
+
+### Service Metadata
+
+```sql
+CREATE TABLE analytics.metadata.services (
+  name VARCHAR PRIMARY KEY,
+  team VARCHAR,
+  criticality VARCHAR,  -- P0, P1, P2, P3
+  oncall_group VARCHAR,
+  documentation_url VARCHAR,
+  dependencies ARRAY
+);
+```
+
+## Query Guardrails
+
+IncidentFox applies safety limits to Snowflake queries:
+
+| Guardrail | Default | Description |
+|-----------|---------|-------------|
+| Query timeout | 30s | Maximum query execution time |
+| Result limit | 10,000 rows | Maximum rows returned |
+| Cost limit | Configurable | Maximum credits per query |
+
+### Configuring Limits
+
+```json
+{
+  "tools": {
+    "snowflake": {
+      "query_timeout": 30,
+      "max_rows": 10000,
+      "cost_limit": 1.0
+    }
+  }
+}
+```
+
+## Troubleshooting
+
+### Connection Failed
+
+**Symptom:** "Unable to connect to Snowflake"
+
+**Solutions:**
+1. Verify account identifier format
+2. Check username/password
+3. Ensure warehouse is running (not suspended)
+4. Verify network allows outbound to Snowflake
+
+### Permission Denied
+
+**Symptom:** "Insufficient privileges to execute query"
+
+**Solutions:**
+1. Verify role has SELECT on required tables
+2. Check role is granted to user
+3. Verify database/schema usage grants
+
+### Query Timeout
+
+**Symptom:** "Query execution timed out"
+
+**Solutions:**
+1. Optimize query (add filters, limit scope)
+2. Increase timeout setting
+3. Use a larger warehouse
+4. Pre-aggregate data into summary tables
+
+## Best Practices
+
+<Tip>
+**Create summary tables** for common queries to reduce execution time and cost.
+</Tip>
+
+1. **Use read-only role** - Never grant write permissions
+2. **Set warehouse auto-suspend** - Control costs
+3. **Pre-aggregate data** - Create hourly/daily summaries
+4. **Index timestamp columns** - Most queries filter by time
+5. **Limit query scope** - Always include time bounds
+
+## Security Considerations
+
+- Use key pair authentication when possible
+- Store credentials in secrets manager
+- Use role-based access control
+- Enable Snowflake audit logging
+- Regularly review access patterns
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="AWS" icon="aws" href="/data-sources/aws">
+    Connect AWS CloudWatch
+  </Card>
+  <Card title="Coralogix" icon="chart-line" href="/data-sources/coralogix">
+    Set up log search
+  </Card>
+</CardGroup>
