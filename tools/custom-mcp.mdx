@@ -18,17 +18,10 @@ MCP is an open protocol that standardizes how AI agents access external tools an
 
 ## Architecture
 
-```
-┌─────────────────┐     ┌─────────────────┐
-│   IncidentFox   │────▶│   MCP Server    │
-│     Agent       │     │  (Your Custom)  │
-└─────────────────┘     └────────┬────────┘
-                                 │
-                                 ▼
-                        ┌─────────────────┐
-                        │  Your Internal  │
-                        │    Systems      │
-                        └─────────────────┘
+```mermaid
+graph TD
+    A[IncidentFox Agent] --> B[MCP Server<br/>Your Custom]
+    B --> C[Your Internal<br/>Systems]
 ```
 
 ## Configuration

@@ -45,28 +45,19 @@ IncidentFox connects to your existing observability and data platforms to invest
 
 ## Data Source Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                   IncidentFox Agent                      │
-├─────────────────────────────────────────────────────────┤
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐    │
-│  │ K8s     │  │ AWS     │  │ Metrics │  │ Coding  │    │
-│  │ Agent   │  │ Agent   │  │ Agent   │  │ Agent   │    │
-│  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘    │
-└───────┼────────────┼────────────┼────────────┼──────────┘
-        │            │            │            │
-        ▼            ▼            ▼            ▼
-   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
-   │Kubernetes│  │  AWS    │  │Coralogix│  │ GitHub  │
-   │ Cluster │  │CloudWatch│  │Datadog  │  │ Repos   │
-   └─────────┘  └─────────┘  │Grafana  │  └─────────┘
-                             └─────────┘
-                                  │
-                                  ▼
-                             ┌─────────┐
-                             │Snowflake│
-                             │(enrich) │
-                             └─────────┘
+```mermaid
+graph TD
+    subgraph IncidentFox
+    A[K8s Agent]
+    B[AWS Agent]
+    C[Metrics Agent]
+    D[Coding Agent]
+    end
+    A --> E[Kubernetes Cluster]
+    B --> F[AWS CloudWatch]
+    C --> G[Coralogix/Datadog/Grafana]
+    D --> H[GitHub Repos]
+    G --> I[Snowflake<br/>enrich]
 ```
 
 ## Credential Management

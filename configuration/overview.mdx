@@ -9,16 +9,15 @@ IncidentFox uses a hierarchical configuration system that allows organizations t
 
 ### Hierarchy
 
-```
-Organization (root)
-    │
-    ├── Engineering Group
-    │       ├── Platform Team
-    │       └── Backend Team
-    │
-    └── Infrastructure Group
-            ├── SRE Team
-            └── DevOps Team
+```mermaid
+graph TD
+    A[Organization root]
+    A --> B[Engineering Group]
+    A --> C[Infrastructure Group]
+    B --> D[Platform Team]
+    B --> E[Backend Team]
+    C --> F[SRE Team]
+    C --> G[DevOps Team]
 ```
 
 Configuration flows from top to bottom. Each level can:

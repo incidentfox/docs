@@ -9,28 +9,12 @@ System prompts are the primary way to customize agent behavior. A well-crafted p
 
 ## Prompt Architecture
 
-```
-┌─────────────────────────────────────────┐
-│           System Prompt                 │
-├─────────────────────────────────────────┤
-│  1. Role & Identity                     │
-│  2. Context & Knowledge                 │
-│  3. Guidelines & Process                │
-│  4. Constraints & Guardrails            │
-│  5. Output Format                       │
-└─────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────┐
-│         User Message                    │
-│  "investigate high latency in payments" │
-└─────────────────────────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────────┐
-│         Agent Response                  │
-│  (follows prompt guidelines)            │
-└─────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[System Prompt] --> D[User Message<br/>investigate high latency in payments]
+    D --> E[Agent Response<br/>follows prompt guidelines]
+
+    B[1. Role & Identity<br/>2. Context & Knowledge<br/>3. Guidelines & Process<br/>4. Constraints & Guardrails<br/>5. Output Format] -.->|Components| A
 ```
 
 ## Section-by-Section Guide

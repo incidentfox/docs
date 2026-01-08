@@ -30,38 +30,14 @@ IncidentFox provides 50+ built-in tools across multiple categories. These tools 
 
 ## How Tools Work
 
-```
-┌─────────────────┐
-│     Agent       │
-│  (Investigation)│
-└────────┬────────┘
-         │
-         │ Tool Request
-         ▼
-┌─────────────────┐
-│   Tool Loader   │
-│  ┌───────────┐  │
-│  │ Is tool   │  │
-│  │ installed?│  │
-│  └─────┬─────┘  │
-│        │        │
-│  ┌─────▼─────┐  │
-│  │   Auth    │  │
-│  │configured?│  │
-│  └─────┬─────┘  │
-│        │        │
-│  ┌─────▼─────┐  │
-│  │ Tool      │  │
-│  │ enabled?  │  │
-│  └───────────┘  │
-└────────┬────────┘
-         │
-         │ Execute
-         ▼
-┌─────────────────┐
-│  External API   │
-│  (AWS, K8s...)  │
-└─────────────────┘
+```mermaid
+graph TD
+    A[Agent] -->|Tool Request| B{Tool Loader}
+    B -->|Check| C{Is tool installed?}
+    C -->|Yes| D{Auth configured?}
+    D -->|Yes| E{Tool enabled?}
+    E -->|Yes| F[Execute]
+    F --> G[External API<br/>AWS, K8s, etc.]
 ```
 
 ## Tool Loading
