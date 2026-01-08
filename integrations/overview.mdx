@@ -20,29 +20,16 @@ These integrations allow you to invoke IncidentFox:
 
 ## Integration Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Trigger Sources                       │
-├───────────┬───────────┬───────────┬───────────┬─────────┤
-│   Slack   │  GitHub   │ PagerDuty │Incident.io│  API    │
-│   Bot     │   Bot     │  Webhook  │  Webhook  │  REST   │
-└─────┬─────┴─────┬─────┴─────┬─────┴─────┬─────┴────┬────┘
-      │           │           │           │          │
-      └───────────┴───────────┴───────────┴──────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │   IncidentFox   │
-                    │     Agent       │
-                    └────────┬────────┘
-                             │
-           ┌─────────────────┼─────────────────┐
-           │                 │                 │
-           ▼                 ▼                 ▼
-    ┌───────────┐     ┌───────────┐     ┌───────────┐
-    │Data Source│     │Data Source│     │Data Source│
-    │(Coralogix)│     │   (AWS)   │     │(Snowflake)│
-    └───────────┘     └───────────┘     └───────────┘
+```mermaid
+graph TD
+    A[Slack Bot] --> F[IncidentFox Agent]
+    B[GitHub Bot] --> F
+    C[PagerDuty Webhook] --> F
+    D[Incident.io Webhook] --> F
+    E[REST API] --> F
+    F --> G[Coralogix]
+    F --> H[AWS]
+    F --> I[Snowflake]
 ```
 
 ## Quick Setup

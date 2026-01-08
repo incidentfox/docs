@@ -57,19 +57,13 @@ Incident.io integration enables IncidentFox to:
 
 ## How It Works
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│ Incident.io │────▶│ IncidentFox │────▶│   Slack     │
-│  Webhook    │     │   Agent     │     │  Channel    │
-└─────────────┘     └─────────────┘     └─────────────┘
-       │                   │                   ▲
-       │                   ▼                   │
-       │            ┌─────────────┐            │
-       │            │Data Sources │            │
-       │            └─────────────┘            │
-       │                   │                   │
-       └───────────────────┴───────────────────┘
-                   (findings)
+```mermaid
+graph TD
+    A[Incident.io Webhook] --> B[IncidentFox Agent]
+    B --> C[Data Sources]
+    C --> D[Findings]
+    D --> E[Slack Channel]
+    A --> E
 ```
 
 1. **Incident created** in Incident.io

@@ -58,11 +58,10 @@ PagerDuty integration enables IncidentFox to:
 
 ## How It Works
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  PagerDuty  │────▶│ IncidentFox │────▶│   Slack     │
-│   Alert     │     │   Agent     │     │  Channel    │
-└─────────────┘     └─────────────┘     └─────────────┘
+```mermaid
+graph LR
+    A[PagerDuty Alert] --> B[IncidentFox Agent]
+    B --> C[Slack Channel]
 ```
 
 When a PagerDuty incident triggers:

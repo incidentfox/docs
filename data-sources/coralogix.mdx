@@ -141,13 +141,12 @@ Coralogix's AI SRE agent, Olly, can work alongside IncidentFox for enhanced inve
 
 ### How It Works
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│IncidentFox  │────▶│  Coralogix  │────▶│    Olly     │
-│   Agent     │     │    API      │     │  (AI SRE)   │
-└─────────────┘     └─────────────┘     └─────────────┘
-        │                                      │
-        │◀─────── Enriched Analysis ──────────┘
+```mermaid
+graph LR
+    A[IncidentFox Agent] --> B[Coralogix API]
+    B --> C[Olly AI SRE]
+    C --> D[Enriched Analysis]
+    D --> A
 ```
 
 IncidentFox can:

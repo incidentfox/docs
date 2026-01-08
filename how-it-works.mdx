@@ -7,26 +7,14 @@ description: "Understanding IncidentFox's multi-agent architecture"
 
 IncidentFox uses a multi-agent architecture where specialized AI agents collaborate to investigate incidents. Each agent has expertise in a specific domain and access to relevant tools.
 
-```
-                    ┌─────────────┐
-                    │   Planner   │  ← Orchestrates investigations
-                    │   Agent     │
-                    └──────┬──────┘
-                           │
-        ┌──────────────────┼──────────────────┐
-        │                  │                  │
-        ▼                  ▼                  ▼
-┌───────────────┐  ┌───────────────┐  ┌───────────────┐
-│   K8s Agent   │  │   AWS Agent   │  │ Metrics Agent │
-│ (9 tools)     │  │ (8 tools)     │  │ (22 tools)    │
-└───────────────┘  └───────────────┘  └───────────────┘
-        │                  │                  │
-        ▼                  ▼                  ▼
-┌───────────────┐  ┌───────────────┐  ┌───────────────┐
-│ Coding Agent  │  │Investigation  │  │  (shared)     │
-│ (15 tools)    │  │    Agent      │  │ llm_call      │
-│               │  │ (30+ tools)   │  │ web_search    │
-└───────────────┘  └───────────────┘  └───────────────┘
+```mermaid
+graph TD
+    A[Planner Agent<br/>Orchestrates investigations] --> B[K8s Agent<br/>9 tools]
+    A --> C[AWS Agent<br/>8 tools]
+    A --> D[Metrics Agent<br/>22 tools]
+    B --> E[Coding Agent<br/>15 tools]
+    C --> F[Investigation Agent<br/>30+ tools]
+    D --> G[Shared Tools<br/>llm_call, web_search]
 ```
 
 ## The Agents
@@ -136,14 +124,10 @@ Here's what happens when you trigger an investigation:
 
 IncidentFox uses hierarchical configuration that flows from organization to team level:
 
-```
-Organization Defaults
-        │
-        ▼
-   Group Config (optional)
-        │
-        ▼
-    Team Config
+```mermaid
+graph TD
+    A[Organization Defaults] --> B[Group Config<br/>optional]
+    B --> C[Team Config]
 ```
 
 Each level can override settings from the level above. This allows:
@@ -183,20 +167,12 @@ The team's effective config merges both, so they get:
 
 ## Data Flow
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Trigger   │────▶│   Agent     │────▶│   Tools     │
-│  (Slack,    │     │  Runtime    │     │  Execute    │
-│   GitHub)   │     │             │     │             │
-└─────────────┘     └──────┬──────┘     └──────┬──────┘
-                           │                   │
-                           ▼                   ▼
-                    ┌─────────────┐     ┌─────────────┐
-                    │   Config    │     │Data Sources │
-                    │   Service   │     │(Coralogix,  │
-                    │             │     │ Snowflake,  │
-                    │             │     │ AWS, etc.)  │
-                    └─────────────┘     └─────────────┘
+```mermaid
+graph LR
+    A[Trigger<br/>Slack, GitHub] --> B[Agent Runtime]
+    B --> C[Tools Execute]
+    B --> D[Config Service]
+    C --> E[Data Sources<br/>Coralogix, Snowflake, AWS]
 ```
 
 1. **Triggers** send investigation requests to the Agent Runtime
