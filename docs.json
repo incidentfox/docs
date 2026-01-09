@@ -103,8 +103,9 @@
     }
   },
   "logo": {
-    "light": "/logo/light.png",
-    "dark": "/logo/dark.png"
+    "light": "/logo/icon.png",
+    "dark": "/logo/icon.png",
+    "href": "https://incidentfox.ai"
   },
   "navbar": {
     "links": [
