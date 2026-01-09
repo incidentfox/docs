@@ -1,0 +1,8 @@
+/* Make the logo bigger */
+.logo-container img,
+a[href="/"] img,
+nav img {
+  max-height: 48px !important;
+  height: 48px !important;
+  width: auto !important;
+}
