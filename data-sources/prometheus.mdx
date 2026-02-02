@@ -1,0 +1,155 @@
+---
+title: "Prometheus"
+description: "Connect IncidentFox to Prometheus for metrics queries and alerting"
+---
+
+## Overview
+
+IncidentFox integrates with Prometheus for metrics queries, instant queries, and alert management. This includes support for Alertmanager for alert correlation.
+
+## Tools Available
+
+| Tool | Description |
+|------|-------------|
+| `query_prometheus` | Execute PromQL range queries |
+| `prometheus_instant_query` | Execute instant PromQL queries |
+| `get_prometheus_alerts` | Get configured alert rules |
+| `get_alertmanager_alerts` | Get currently firing alerts |
+| `get_active_alerts` | Get all active alerts across sources |
+
+## Configuration
+
+### Basic Setup
+
+```json
+{
+  "tools": {
+    "prometheus": {
+      "enabled": true,
+      "url": "https://prometheus.your-domain.com",
+      "auth": "vault://secrets/prometheus-token"
+    }
+  }
+}
+```
+
+### With Alertmanager
+
+```json
+{
+  "tools": {
+    "prometheus": {
+      "enabled": true,
+      "url": "https://prometheus.your-domain.com",
+      "alertmanager_url": "https://alertmanager.your-domain.com",
+      "auth": "vault://secrets/prometheus-token"
+    }
+  }
+}
+```
+
+## Authentication
+
+Prometheus supports several authentication methods:
+
+| Method | Configuration |
+|--------|--------------|
+| Bearer Token | `auth: "vault://secrets/token"` |
+| Basic Auth | `username` and `password` fields |
+| No Auth | Omit auth field (not recommended) |
+
+## Example Queries
+
+### PromQL Range Query
+
+```
+@incidentfox query prometheus for CPU usage of the payments service over the last hour
+```
+
+IncidentFox executes:
+```promql
+rate(container_cpu_usage_seconds_total{service="payments"}[5m])
+```
+
+### Check Firing Alerts
+
+```
+@incidentfox what alerts are currently firing?
+```
+
+### Correlate with Metrics
+
+```
+@incidentfox correlate the error rate spike with any metric anomalies
+```
+
+## Use Cases
+
+### Anomaly Detection
+
+IncidentFox uses Prometheus metrics for anomaly detection:
+
+1. Queries historical data for baseline
+2. Applies Z-score or Prophet-based detection
+3. Identifies deviations from normal behavior
+
+### Alert Correlation
+
+When investigating incidents, IncidentFox:
+
+1. Fetches currently firing alerts from Alertmanager
+2. Correlates alert timing with incident timeline
+3. Identifies related alerts across services
+
+### Capacity Planning
+
+Use the forecasting tools with Prometheus data:
+
+```
+@incidentfox forecast disk usage for the next 7 days
+```
+
+## Required Permissions
+
+| Component | Permission |
+|-----------|-----------|
+| Prometheus | Query access to `/api/v1/query` and `/api/v1/query_range` |
+| Alertmanager | Read access to `/api/v2/alerts` |
+
+## Troubleshooting
+
+### Connection Issues
+
+```
+Error: Failed to connect to Prometheus
+```
+
+**Solutions:**
+1. Verify the URL is correct and accessible
+2. Check authentication credentials
+3. Ensure network connectivity from IncidentFox
+
+### Query Timeouts
+
+For large queries, increase the timeout:
+
+```json
+{
+  "tools": {
+    "prometheus": {
+      "timeout_seconds": 60
+    }
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Grafana" icon="chart-line" href="/data-sources/grafana">
+    Query Prometheus via Grafana
+  </Card>
+  <Card title="Anomaly Detection" icon="magnifying-glass" href="/tools/anomaly-detection">
+    Use anomaly detection tools
+  </Card>
+</CardGroup>

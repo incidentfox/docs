@@ -1,0 +1,220 @@
+---
+title: "Log Analysis Tools"
+description: "Advanced log analysis capabilities for pattern detection and anomaly identification"
+---
+
+## Overview
+
+IncidentFox provides 7 specialized log analysis tools that work across any log backend (CloudWatch, Elasticsearch, Coralogix, Splunk, etc.). These tools help identify patterns, anomalies, and correlations in log data.
+
+## Tools Available
+
+| Tool | Description |
+|------|-------------|
+| `log_get_statistics` | Get log volume, error rates, and distribution stats |
+| `log_sample` | Sample logs for pattern discovery |
+| `log_search_pattern` | Search for specific patterns using regex |
+| `log_around_timestamp` | Get context around a specific event |
+| `log_correlate_events` | Correlate events across services |
+| `log_extract_signatures` | Identify recurring error patterns |
+| `log_detect_anomalies` | Find unusual log patterns |
+
+## log_get_statistics
+
+Get statistical overview of log data:
+
+```
+@incidentfox show me log statistics for the payments service over the last hour
+```
+
+**Returns:**
+- Total log volume
+- Error rate percentage
+- Log level distribution
+- Top error messages
+- Throughput over time
+
+## log_sample
+
+Sample logs to understand patterns without overwhelming data:
+
+```
+@incidentfox sample 100 error logs from the checkout service
+```
+
+**Use cases:**
+- Initial investigation to understand error types
+- Pattern discovery before targeted searches
+- Representative data for analysis
+
+## log_search_pattern
+
+Search for specific patterns using regex:
+
+```
+@incidentfox search for "timeout after [0-9]+ ms" in the api service logs
+```
+
+**Supports:**
+- Full regex syntax
+- Case-insensitive matching
+- Multi-line patterns
+
+## log_around_timestamp
+
+Get context around a specific event:
+
+```
+@incidentfox show me logs 5 minutes before and after the error at 14:32:15 UTC
+```
+
+**Returns:**
+- Logs from the target service
+- Related logs from dependent services
+- System events in the timeframe
+
+## log_correlate_events
+
+Correlate events across services using trace IDs or request IDs:
+
+```
+@incidentfox correlate logs for trace ID abc-123-def
+```
+
+**Returns:**
+- Timeline of events across services
+- Latency breakdown by service
+- Error propagation path
+
+## log_extract_signatures
+
+Identify recurring error patterns automatically:
+
+```
+@incidentfox extract error signatures from the last 24 hours
+```
+
+**Process:**
+1. Clusters similar log messages
+2. Extracts common patterns (parameterized)
+3. Ranks by frequency and impact
+
+**Example output:**
+```json
+{
+  "signatures": [
+    {
+      "pattern": "Connection refused to {host}:{port}",
+      "count": 1234,
+      "first_seen": "2024-01-15T10:00:00Z",
+      "last_seen": "2024-01-15T14:30:00Z"
+    }
+  ]
+}
+```
+
+## log_detect_anomalies
+
+Find unusual patterns in log data:
+
+```
+@incidentfox detect anomalies in the api service logs
+```
+
+**Detects:**
+- Unusual log volume spikes/drops
+- New error types not seen before
+- Abnormal patterns in log messages
+
+## Configuration
+
+### Backend Selection
+
+Configure which log backend to use:
+
+```json
+{
+  "tools": {
+    "log_analysis": {
+      "default_backend": "elasticsearch",
+      "backends": {
+        "elasticsearch": {
+          "hosts": ["https://es.your-domain.com:9200"]
+        },
+        "cloudwatch": {
+          "log_group_prefix": "/aws/lambda/"
+        }
+      }
+    }
+  }
+}
+```
+
+### Sampling Settings
+
+```json
+{
+  "tools": {
+    "log_analysis": {
+      "default_sample_size": 100,
+      "max_sample_size": 1000
+    }
+  }
+}
+```
+
+## Use Cases
+
+### Error Investigation
+
+1. Start with `log_get_statistics` to understand volume
+2. Use `log_sample` to see representative errors
+3. Apply `log_extract_signatures` to identify patterns
+4. Drill down with `log_search_pattern`
+
+### Incident Timeline
+
+1. Identify incident start with `log_detect_anomalies`
+2. Get context with `log_around_timestamp`
+3. Trace across services with `log_correlate_events`
+
+### Proactive Monitoring
+
+1. Run `log_detect_anomalies` to find new issues
+2. Extract signatures to track recurring problems
+3. Correlate with deployment events
+
+## Best Practices
+
+### Time Ranges
+
+Start with narrow time ranges and expand if needed:
+- Initial investigation: 1 hour
+- Pattern analysis: 24 hours
+- Trend analysis: 7 days
+
+### Filtering
+
+Use service/component filters to reduce noise:
+
+```
+@incidentfox search for errors in the checkout service, excluding health checks
+```
+
+### Correlation IDs
+
+Ensure your services log correlation IDs for effective tracing:
+- Trace ID (OpenTelemetry)
+- Request ID
+- Session ID
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Anomaly Detection" icon="magnifying-glass" href="/tools/anomaly-detection">
+    Metric anomaly detection
+  </Card>
+  <Card title="Elasticsearch" icon="database" href="/data-sources/elasticsearch">
+    Configure Elasticsearch
+  </Card>
+</CardGroup>

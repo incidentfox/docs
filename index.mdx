@@ -25,23 +25,32 @@ IncidentFox is an AI SRE / AI On-Call engineer that integrates with your observa
 ## Key Features
 
 <AccordionGroup>
-  <Accordion title="Multi-Agent Architecture">
-    IncidentFox uses 6 specialized agents that work together:
-    - **Planner Agent** - Orchestrates investigations and delegates tasks
-    - **K8s Agent** - Kubernetes troubleshooting specialist
-    - **AWS Agent** - AWS resource debugging
-    - **Metrics Agent** - Anomaly detection and correlation
-    - **Coding Agent** - Code analysis and CI/CD fixes
-    - **Investigation Agent** - Comprehensive troubleshooting with 50+ tools
+  <Accordion title="Dual-Runtime Agent Architecture">
+    IncidentFox uses two powerful agent runtimes:
+    - **OpenAI SDK Agent** - Production automation with multi-agent orchestration (Planner + Specialists)
+    - **Claude SDK SRE Agent** - Interactive debugging with Kubernetes sandbox isolation
+
+    Specialized agents include K8s, AWS, Metrics, Coding, and Investigation agents working together.
   </Accordion>
 
-  <Accordion title="50+ Built-in Tools">
-    Pre-built integrations for your entire stack:
-    - **Kubernetes**: Pod logs, events, deployments, resource usage
-    - **AWS**: EC2, Lambda, RDS, ECS, CloudWatch
-    - **Observability**: Grafana, Datadog, New Relic, Coralogix
-    - **Code**: GitHub, Git, CI/CD pipelines
-    - **Data**: Snowflake, Elasticsearch
+  <Accordion title="300+ Built-in Tools">
+    Pre-built integrations across 20+ categories:
+    - **Kubernetes**: Pod logs, events, deployments, resource usage (9 tools)
+    - **AWS**: EC2, Lambda, RDS, ECS, CloudWatch (8+ tools)
+    - **Observability**: Grafana, Datadog, Prometheus, Coralogix, Sentry, New Relic (15+ tools)
+    - **Log Analysis**: Statistics, sampling, pattern search, anomaly detection (7 tools)
+    - **Docker**: Container logs, stats, exec, events (15 tools)
+    - **GitHub**: Code search, PRs, issues, Actions, commits (16 tools)
+    - **Database**: MySQL, PostgreSQL, Snowflake, BigQuery (70+ tools)
+    - **And more**: PagerDuty, Slack, Linear, Jira, Confluence, Terraform...
+  </Accordion>
+
+  <Accordion title="RAPTOR Knowledge Base">
+    Hierarchical knowledge retrieval system based on ICLR 2024 research:
+    - Handles 100+ page runbooks without context loss
+    - Knowledge graphs for service dependencies and ownership
+    - Learns from past investigations to improve over time
+    - Multi-level abstraction: procedural, factual, temporal, policy
   </Accordion>
 
   <Accordion title="Multiple Trigger Sources">
@@ -51,15 +60,27 @@ IncidentFox is an AI SRE / AI On-Call engineer that integrates with your observa
     - **PagerDuty** - Automatic investigation on alerts
     - **Incident.io** - Integrated incident response
     - **REST API** - Programmatic access
+    - **Web UI** - Dashboard for investigations and configuration
   </Accordion>
 
-  <Accordion title="Enterprise Governance">
+  <Accordion title="Advanced AI/ML Capabilities">
+    Intelligent analysis powered by state-of-the-art ML:
+    - **Anomaly Detection** - Z-score, Prophet-based seasonal detection
+    - **Forecasting** - Capacity planning with uncertainty bounds
+    - **Correlation Analysis** - Cross-service metric relationships
+    - **Change Point Detection** - Identify when issues started
+    - **Pattern Learning** - Records and reuses incident patterns
+  </Accordion>
+
+  <Accordion title="Enterprise Security & Compliance">
     Built for enterprise security and compliance:
-    - SSO/OIDC authentication
-    - Role-based access control (RBAC)
-    - Approval workflows for changes
+    - SOC 2 compliant infrastructure
+    - Claude Sandbox isolation with Kubernetes + gVisor
+    - Credentials proxy (Envoy) - secrets never touch agent
+    - SSO/OIDC authentication (Google, Azure AD, Okta)
+    - Approval workflows for critical changes
     - Full audit logging
-    - Hierarchical team configuration
+    - On-premise and air-gapped deployment options
   </Accordion>
 </AccordionGroup>
 
@@ -93,7 +114,8 @@ IncidentFox can monitor your systems and alert before issues escalate:
 
 - **Anomaly Detection** - Prophet-based forecasting identifies unusual patterns
 - **Correlation Analysis** - Links metrics across services to find relationships
-- **Knowledge Base** - Learns from your runbooks and past incidents
+- **Knowledge Base** - RAPTOR hierarchical retrieval learns from runbooks and past incidents
+- **Alert Correlation** - Connects Prometheus, Alertmanager, and PagerDuty alerts
 
 ## Getting Started
 

@@ -17,19 +17,40 @@ These integrations allow you to invoke IncidentFox:
 | [GitHub](/integrations/github) | @mention in PR/issue | CI/CD failures, code-related issues |
 | [PagerDuty](/integrations/pagerduty) | Webhook on alert | Automatic incident investigation |
 | [Incident.io](/integrations/incident-io) | Webhook on incident | Integrated incident response |
+| [REST API](/api-reference/introduction) | HTTP POST | Programmatic access, custom workflows |
+| [Web UI](/integrations/web-ui) | Dashboard | Manual investigations, configuration |
+
+## Alerting Integrations
+
+These integrations provide alert context and correlation:
+
+| Integration | Capabilities |
+|-------------|-------------|
+| [Prometheus/Alertmanager](/integrations/prometheus) | Alert rules, firing alerts, silence management |
+| [Opsgenie](/integrations/opsgenie) | Alert management, escalation |
+
+## Collaboration Integrations
+
+| Integration | Capabilities |
+|-------------|-------------|
+| [Slack](/integrations/slack) | Messages, channel history, threads, posting |
+| [Microsoft Teams](/integrations/teams) | Messages, channels |
+| [Linear](/integrations/linear) | Issue tracking, project management |
+| [Jira](/integrations/jira) | Ticket creation, issue tracking |
 
 ## Integration Architecture
 
 ```mermaid
 graph TD
-    A[Slack Bot] --> F[IncidentFox Agent]
-    B[GitHub Bot] --> F
-    C[PagerDuty Webhook] --> F
-    D[Incident.io Webhook] --> F
-    E[REST API] --> F
-    F --> G[Coralogix]
-    F --> H[AWS]
-    F --> I[Snowflake]
+    A[Slack Bot] --> G[Orchestrator]
+    B[GitHub Bot] --> G
+    C[PagerDuty Webhook] --> G
+    D[Incident.io Webhook] --> G
+    E[REST API] --> G
+    F[Web UI] --> G
+    G --> H[Agent Runtime]
+    H --> I[300+ Tools]
+    I --> J[Data Sources]
 ```
 
 ## Quick Setup
@@ -51,14 +72,15 @@ graph TD
 
 ## Integration Comparison
 
-| Feature | Slack | GitHub | PagerDuty | Incident.io |
-|---------|-------|--------|-----------|-------------|
-| Manual trigger | Yes | Yes | No | No |
-| Auto-trigger on alert | No | No | Yes | Yes |
-| Response in same tool | Yes | Yes | Via Slack | Via Slack |
-| Rich formatting | Yes | Yes | Yes | Yes |
-| Thread support | Yes | Yes | N/A | N/A |
-| Requires webhook | No | Yes | Yes | Yes |
+| Feature | Slack | GitHub | PagerDuty | Incident.io | Web UI | REST API |
+|---------|-------|--------|-----------|-------------|--------|----------|
+| Manual trigger | Yes | Yes | No | No | Yes | Yes |
+| Auto-trigger on alert | No | No | Yes | Yes | No | Yes |
+| Response in same tool | Yes | Yes | Via Slack | Via Slack | Yes | JSON |
+| Rich formatting | Yes | Yes | Yes | Yes | Yes | N/A |
+| Thread support | Yes | Yes | N/A | N/A | N/A | N/A |
+| Interactive mode | Yes | No | No | No | Yes | Yes |
+| Streaming responses | Yes | No | No | No | Yes | Yes |
 
 ## Recommended Setup
 
@@ -94,5 +116,11 @@ graph TD
   </Card>
   <Card title="Incident.io" icon="siren" href="/integrations/incident-io">
     Set up Incident.io
+  </Card>
+  <Card title="Prometheus" icon="chart-line" href="/integrations/prometheus">
+    Connect Prometheus/Alertmanager
+  </Card>
+  <Card title="Web UI" icon="browser" href="/integrations/web-ui">
+    Use the dashboard
   </Card>
 </CardGroup>

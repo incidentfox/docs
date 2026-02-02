@@ -1,0 +1,133 @@
+---
+title: "Sentry"
+description: "Connect IncidentFox to Sentry for error tracking and issue analysis"
+---
+
+## Overview
+
+IncidentFox integrates with Sentry for error tracking, issue analysis, and release correlation. This helps identify application errors that may be causing incidents.
+
+## Tools Available
+
+| Tool | Description |
+|------|-------------|
+| `sentry_list_issues` | List issues in a project |
+| `sentry_get_issue_details` | Get detailed information about an issue |
+| `sentry_list_projects` | List all Sentry projects |
+| `sentry_get_project_stats` | Get error statistics for a project |
+| `sentry_list_releases` | List releases and deployment info |
+
+## Configuration
+
+```json
+{
+  "tools": {
+    "sentry": {
+      "enabled": true,
+      "organization": "your-org-slug",
+      "auth_token": "vault://secrets/sentry-token"
+    }
+  }
+}
+```
+
+## Authentication
+
+Create a Sentry API token with the following scopes:
+
+| Scope | Purpose |
+|-------|---------|
+| `project:read` | List and view projects |
+| `event:read` | View issue details and events |
+| `org:read` | View organization info |
+
+## Example Queries
+
+### Find Recent Errors
+
+```
+@incidentfox what errors are occurring in the checkout service?
+```
+
+### Correlate with Deployment
+
+```
+@incidentfox did the latest release introduce any new errors?
+```
+
+### Get Issue Details
+
+```
+@incidentfox show me details about Sentry issue PROJ-1234
+```
+
+## Use Cases
+
+### Error Spike Investigation
+
+When investigating latency or availability issues:
+
+1. IncidentFox checks Sentry for recent error spikes
+2. Correlates error timing with incident timeline
+3. Identifies specific exceptions causing problems
+
+### Release Impact Analysis
+
+After a deployment:
+
+1. Compare error rates before/after release
+2. Identify new error types introduced
+3. Correlate with GitHub commits in the release
+
+### Root Cause Identification
+
+Sentry provides stack traces that help identify:
+
+- Specific code paths causing errors
+- Environment differences (e.g., specific hosts)
+- User impact scope
+
+## Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `organization` | Sentry organization slug | Required |
+| `auth_token` | API authentication token | Required |
+| `default_project` | Default project for queries | Optional |
+| `environment` | Filter to specific environment | Optional |
+
+## Troubleshooting
+
+### Rate Limiting
+
+Sentry has API rate limits. If you hit them:
+
+```json
+{
+  "tools": {
+    "sentry": {
+      "rate_limit_retry": true,
+      "max_retries": 3
+    }
+  }
+}
+```
+
+### Missing Events
+
+If recent events aren't appearing:
+
+1. Check Sentry data retention settings
+2. Verify the project has events
+3. Ensure the time range is correct
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="/integrations/github">
+    Correlate errors with code changes
+  </Card>
+  <Card title="Log Analysis" icon="file-lines" href="/tools/log-analysis">
+    Combine with log analysis
+  </Card>
+</CardGroup>

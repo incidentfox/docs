@@ -1,21 +1,77 @@
 ---
 title: "How It Works"
-description: "Understanding IncidentFox's multi-agent architecture"
+description: "Understanding IncidentFox's dual-runtime architecture and RAPTOR knowledge system"
 ---
 
 ## Architecture Overview
 
-IncidentFox uses a multi-agent architecture where specialized AI agents collaborate to investigate incidents. Each agent has expertise in a specific domain and access to relevant tools.
+IncidentFox uses a sophisticated dual-runtime architecture with two complementary agent systems:
+
+1. **OpenAI SDK Agent** - Multi-agent orchestration for production automation
+2. **Claude SDK SRE Agent** - Interactive debugging with Kubernetes sandbox isolation
+
+Both systems share access to 300+ tools and the RAPTOR knowledge base.
+
+```mermaid
+graph TD
+    subgraph "External Services"
+    A[Slack]
+    B[GitHub]
+    C[PagerDuty]
+    end
+
+    subgraph "IncidentFox"
+    D[Orchestrator<br/>Webhook routing, auth]
+    E[OpenAI SDK Agent<br/>Production automation]
+    F[Claude SDK SRE Agent<br/>Interactive debugging]
+    G[Config Service<br/>Multi-tenant config]
+    H[RAPTOR Knowledge Base<br/>Hierarchical retrieval]
+    I[Web UI<br/>Dashboard]
+    end
+
+    A --> D
+    B --> D
+    C --> D
+    D --> E
+    D --> F
+    E --> G
+    F --> G
+    E --> H
+    F --> H
+    I --> G
+```
+
+## Dual Agent Runtimes
+
+### OpenAI SDK Agent (Production Automation)
+
+The production agent uses multi-agent orchestration where specialized agents collaborate:
 
 ```mermaid
 graph TD
     A[Planner Agent<br/>Orchestrates investigations] --> B[K8s Agent<br/>9 tools]
-    A --> C[AWS Agent<br/>8 tools]
-    A --> D[Metrics Agent<br/>22 tools]
-    B --> E[Coding Agent<br/>15 tools]
-    C --> F[Investigation Agent<br/>30+ tools]
-    D --> G[Shared Tools<br/>llm_call, web_search]
+    A --> C[AWS Agent<br/>8+ tools]
+    A --> D[Metrics Agent<br/>22+ tools]
+    A --> E[Coding Agent<br/>15+ tools]
+    A --> F[Investigation Agent<br/>300+ tools]
 ```
+
+**Key characteristics:**
+- Automated investigation triggered by webhooks
+- Multi-agent orchestration for parallel data gathering
+- Optimized for production incident response
+- Async execution with status updates
+
+### Claude SDK SRE Agent (Interactive Debugging)
+
+The interactive agent provides hands-on debugging with enhanced security:
+
+**Key characteristics:**
+- Kubernetes sandbox isolation with gVisor
+- Interactive mode with interrupt/resume support
+- Streaming responses for real-time feedback
+- Credentials proxy (Envoy) - secrets never touch agent
+- Ideal for complex, exploratory investigations
 
 ## The Agents
 
@@ -46,11 +102,11 @@ Specializes in Kubernetes troubleshooting with 9 dedicated tools:
 | `get_deployment_history` | View rollout history |
 | `describe_service` | Get service details and endpoints |
 | `get_pod_resource_usage` | CPU/memory usage metrics |
-| `docker_exec` | Execute commands in containers |
+| `propose_pod_restart` | Suggest pod restart with approval workflow |
 
 ### AWS Agent
 
-Handles AWS infrastructure debugging with 8 tools:
+Handles AWS infrastructure debugging with 8+ tools:
 
 | Tool | Description |
 |------|-------------|
@@ -65,25 +121,75 @@ Handles AWS infrastructure debugging with 8 tools:
 
 ### Metrics Agent
 
-Focuses on anomaly detection and correlation with 22 tools including:
+Focuses on anomaly detection and correlation with 22+ tools including:
 
-- **Anomaly Detection** - Prophet-based forecasting, Z-score detection
-- **Correlation Analysis** - Find relationships between metrics
+- **Anomaly Detection** - Z-score, Prophet-based seasonal detection
+- **Correlation Analysis** - Pearson correlation between metrics
 - **Change Point Detection** - Identify when metrics behavior changed
-- **Grafana Integration** - Query Prometheus, view dashboards
+- **Forecasting** - Prophet-based capacity planning
+- **Trend Decomposition** - Separate trend, seasonality, and residuals
 
 ### Coding Agent
 
-Handles code analysis and CI/CD with 15 tools:
+Handles code analysis and CI/CD with 15+ tools:
 
 - **File Operations** - Read, search, and analyze code
-- **Git Operations** - Diff, blame, log analysis
-- **GitHub Integration** - PR analysis, code search
+- **Git Operations** - Diff, blame, log, recent changes analysis
+- **GitHub Integration** - PR analysis, code search, commit correlation
 - **Test Execution** - Run tests and analyze failures
 
 ### Investigation Agent
 
-The "jack of all trades" agent with access to 30+ tools from all categories. Used for complex, cross-domain investigations that require multiple types of analysis.
+The "jack of all trades" agent with access to all 300+ tools. Used for complex, cross-domain investigations that require multiple types of analysis.
+
+## RAPTOR Knowledge Base
+
+IncidentFox uses RAPTOR (Recursive Abstractive Processing for Tree-Organized Retrieval), a hierarchical knowledge system based on ICLR 2024 research.
+
+### Why RAPTOR?
+
+Traditional RAG (Retrieval Augmented Generation) struggles with:
+- Long documents (100+ page runbooks)
+- Complex relationships between concepts
+- Multi-level reasoning
+
+RAPTOR solves this with hierarchical abstraction:
+
+```mermaid
+graph TD
+    A[Raw Documents<br/>Runbooks, Postmortems] --> B[Chunking]
+    B --> C[Clustering]
+    C --> D[Summarization]
+    D --> E[Abstraction Levels]
+    E --> F[Tree Structure]
+    F --> G[Retrieval]
+```
+
+### Knowledge Types
+
+| Level | Type | Description |
+|-------|------|-------------|
+| L1 | Procedural | Step-by-step runbooks |
+| L2 | Factual | Service configurations, thresholds |
+| L3 | Temporal | Past incidents, timelines |
+| L4 | Policy | Escalation rules, SLAs |
+
+### Knowledge Graph
+
+Beyond tree structure, IncidentFox maintains a knowledge graph for:
+- Service dependencies
+- Team ownership
+- Expertise mapping
+- Related investigations
+
+### Learning from Investigations
+
+IncidentFox improves over time by:
+
+1. **Recording patterns** - Stores cause-solution pairs from successful investigations
+2. **Finding similar incidents** - Matches new issues to past investigations
+3. **Importance scoring** - Uses 9+ signals to rank knowledge relevance
+4. **Contextual boosts** - Adjusts relevance based on current investigation context
 
 ## Investigation Flow
 
@@ -92,6 +198,9 @@ Here's what happens when you trigger an investigation:
 <Steps>
   <Step title="Trigger Received">
     User mentions `@incidentfox` in Slack with a request like "investigate high latency in payments service"
+  </Step>
+  <Step title="Knowledge Retrieval">
+    RAPTOR retrieves relevant runbooks, past incidents, and service documentation
   </Step>
   <Step title="Planner Activates">
     The Planner agent analyzes the request and determines:
@@ -104,12 +213,13 @@ Here's what happens when you trigger an investigation:
     - K8s Agent checks pod status and logs
     - AWS Agent queries CloudWatch metrics
     - Metrics Agent runs anomaly detection
+    - Git tools correlate with recent deployments
   </Step>
   <Step title="Correlation">
     The Investigation Agent correlates findings:
     - Timeline reconstruction
     - Root cause identification
-    - Impact assessment
+    - Impact assessment (blast radius)
   </Step>
   <Step title="Response">
     Results are synthesized and posted back to Slack with:
@@ -118,7 +228,44 @@ Here's what happens when you trigger an investigation:
     - Evidence (logs, metrics, events)
     - Recommended actions
   </Step>
+  <Step title="Learning">
+    If the investigation was successful, patterns are recorded for future use
+  </Step>
 </Steps>
+
+## Investigation Results
+
+Investigations return structured results:
+
+```json
+{
+  "success": true,
+  "findings": "Payment service latency spike correlated with database connection exhaustion",
+  "root_cause": "RDS connection pool at 100% capacity following deployment",
+  "confidence": 92,
+  "recommendations": [
+    "Increase max_connections on RDS",
+    "Review connection pool settings in app config"
+  ],
+  "phase_results": {
+    "data_collection": "completed",
+    "anomaly_detection": "completed",
+    "root_cause_analysis": "completed",
+    "impact_assessment": "completed"
+  },
+  "duration_seconds": 45.2
+}
+```
+
+### Finding Types
+
+| Type | Description |
+|------|-------------|
+| `metric_anomaly` | Unusual metric behavior detected |
+| `log_error` | Error pattern in logs |
+| `event` | System event correlation |
+| `hypothesis` | Generated theory about root cause |
+| `contradiction` | Conflicting evidence detected |
 
 ## Configuration Inheritance
 
@@ -126,14 +273,14 @@ IncidentFox uses hierarchical configuration that flows from organization to team
 
 ```mermaid
 graph TD
-    A[Organization Defaults] --> B[Group Config<br/>optional]
+    A[Organization Defaults] --> B[Business Unit Config<br/>optional]
     B --> C[Team Config]
 ```
 
 Each level can override settings from the level above. This allows:
 
 - **Org-wide defaults** - Set sensible defaults for all teams
-- **Group-specific settings** - Configure for platform vs. application teams
+- **Business unit settings** - Configure for platform vs. application teams
 - **Team overrides** - Fine-tune for specific team needs
 
 ### Example Configuration Flow
@@ -169,16 +316,20 @@ The team's effective config merges both, so they get:
 
 ```mermaid
 graph LR
-    A[Trigger<br/>Slack, GitHub] --> B[Agent Runtime]
-    B --> C[Tools Execute]
-    B --> D[Config Service]
-    C --> E[Data Sources<br/>Coralogix, Snowflake, AWS]
+    A[Trigger<br/>Slack, GitHub, PagerDuty] --> B[Orchestrator]
+    B --> C[Agent Runtime]
+    C --> D[Tools Execute]
+    C --> E[Config Service]
+    C --> F[Knowledge Base]
+    D --> G[Data Sources<br/>Prometheus, Datadog, AWS, K8s]
 ```
 
-1. **Triggers** send investigation requests to the Agent Runtime
-2. **Config Service** provides team-specific configuration
-3. **Tools** query external data sources
-4. **Results** flow back through the agent to the trigger source
+1. **Triggers** send investigation requests to the Orchestrator
+2. **Orchestrator** routes to appropriate agent runtime
+3. **Config Service** provides team-specific configuration
+4. **Knowledge Base** provides relevant context
+5. **Tools** query external data sources
+6. **Results** flow back through the agent to the trigger source
 
 ## Tool Loading
 
@@ -204,13 +355,13 @@ IncidentFox supports the [Model Context Protocol (MCP)](https://modelcontextprot
 
 ### What is MCP?
 
-MCP is an open protocol that allows AI agents to access external tools and data sources in a standardized way.
+MCP is an open protocol that allows AI agents to access external tools and data sources in a standardized way. IncidentFox is compatible with 100+ MCP servers.
 
 ### Using MCP with IncidentFox
 
-1. **Configure MCP servers** in the Web UI
-2. **Equip tools** to agents via configuration
-3. **Agents automatically** use MCP tools during investigations
+1. **Configure MCP servers** at org or team level
+2. **Tools auto-load** without code changes
+3. **Agents automatically** discover and use MCP tools during investigations
 
 ```json
 {
@@ -224,6 +375,37 @@ MCP is an open protocol that allows AI agents to access external tools and data 
 }
 ```
 
+### MCP Inheritance
+
+MCP servers configured at the organization level are inherited by all teams. Teams can add additional servers specific to their needs.
+
+## Security Architecture
+
+### Credentials Proxy
+
+Secrets never touch the agent directly:
+
+```mermaid
+graph LR
+    A[Agent] --> B[Envoy Proxy]
+    B --> C[Credential Resolver]
+    C --> D[Secrets Manager]
+    B --> E[External API]
+```
+
+1. Agent makes API call through Envoy proxy
+2. Envoy intercepts and injects credentials at request time
+3. Secrets are never stored in agent memory
+
+### Claude Sandbox Isolation
+
+The Claude SDK SRE Agent runs in an isolated Kubernetes environment:
+
+- **gVisor** - User-space kernel for container isolation
+- **Network policies** - Restricted egress
+- **Resource limits** - CPU, memory, and time bounds
+- **Ephemeral** - Sandboxes destroyed after investigation
+
 ## Next Steps
 
 <CardGroup cols={2}>
@@ -232,5 +414,11 @@ MCP is an open protocol that allows AI agents to access external tools and data 
   </Card>
   <Card title="Data Sources" icon="database" href="/data-sources/overview">
     Connect your observability stack
+  </Card>
+  <Card title="Knowledge Base" icon="brain" href="/knowledge-base">
+    Configure RAPTOR and teach custom knowledge
+  </Card>
+  <Card title="Security" icon="shield" href="/security">
+    Understand security architecture
   </Card>
 </CardGroup>

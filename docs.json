@@ -23,6 +23,13 @@
             ]
           },
           {
+            "group": "Core Concepts",
+            "pages": [
+              "knowledge-base",
+              "security"
+            ]
+          },
+          {
             "group": "Configuration",
             "pages": [
               "configuration/overview",
@@ -37,20 +44,24 @@
               "integrations/overview",
               "integrations/slack",
               "integrations/github",
-              "integrations/incident-io",
-              "integrations/pagerduty"
+              "integrations/pagerduty",
+              "integrations/incident-io"
             ]
           },
           {
             "group": "Data Sources",
             "pages": [
               "data-sources/overview",
-              "data-sources/coralogix",
-              "data-sources/snowflake",
-              "data-sources/aws",
-              "data-sources/datadog",
+              "data-sources/prometheus",
               "data-sources/grafana",
-              "data-sources/kubernetes"
+              "data-sources/datadog",
+              "data-sources/coralogix",
+              "data-sources/sentry",
+              "data-sources/elasticsearch",
+              "data-sources/aws",
+              "data-sources/kubernetes",
+              "data-sources/docker",
+              "data-sources/snowflake"
             ]
           },
           {
@@ -60,6 +71,8 @@
               "tools/kubernetes",
               "tools/aws",
               "tools/observability",
+              "tools/log-analysis",
+              "tools/anomaly-detection",
               "tools/github",
               "tools/custom-mcp"
             ]
@@ -96,6 +109,11 @@
     "global": {
       "anchors": [
         {
+          "anchor": "GitHub",
+          "href": "https://github.com/incidentfox/incidentfox",
+          "icon": "github"
+        },
+        {
           "anchor": "Support",
           "href": "mailto:support@incidentfox.ai",
           "icon": "envelope"
@@ -109,6 +127,10 @@
   },
   "navbar": {
     "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/incidentfox/incidentfox"
+      },
       {
         "label": "Support",
         "href": "mailto:support@incidentfox.ai"

@@ -1,0 +1,186 @@
+---
+title: "Elasticsearch"
+description: "Connect IncidentFox to Elasticsearch for log search and analysis"
+---
+
+## Overview
+
+IncidentFox integrates with Elasticsearch for log search, aggregations, and analysis. This is commonly used alongside the ELK stack (Elasticsearch, Logstash, Kibana).
+
+## Tools Available
+
+| Tool | Description |
+|------|-------------|
+| `search_logs` | Search logs with query DSL |
+| `aggregate_errors_by_field` | Aggregate error counts by field |
+| `get_log_statistics` | Get log volume statistics |
+
+## Configuration
+
+```json
+{
+  "tools": {
+    "elasticsearch": {
+      "enabled": true,
+      "hosts": ["https://elasticsearch.your-domain.com:9200"],
+      "auth": "vault://secrets/elasticsearch-credentials",
+      "index_pattern": "logs-*"
+    }
+  }
+}
+```
+
+### With API Key Authentication
+
+```json
+{
+  "tools": {
+    "elasticsearch": {
+      "enabled": true,
+      "hosts": ["https://elasticsearch.your-domain.com:9200"],
+      "api_key": "vault://secrets/elasticsearch-api-key",
+      "index_pattern": "logs-*"
+    }
+  }
+}
+```
+
+## Authentication Methods
+
+| Method | Configuration |
+|--------|--------------|
+| Basic Auth | `username` and `password` or combined `auth` |
+| API Key | `api_key` field |
+| Cloud ID | `cloud_id` for Elastic Cloud |
+
+## Example Queries
+
+### Search for Errors
+
+```
+@incidentfox search elasticsearch for errors in the payments service
+```
+
+### Aggregate by Error Type
+
+```
+@incidentfox what are the most common error types in the last hour?
+```
+
+### Find Specific Logs
+
+```
+@incidentfox find logs containing "connection refused" from the API service
+```
+
+## Use Cases
+
+### Error Investigation
+
+When investigating application errors:
+
+1. Search for error logs matching the timeframe
+2. Aggregate by error type to find patterns
+3. Drill down into specific error instances
+
+### Log Correlation
+
+Correlate logs across services:
+
+1. Search logs from multiple indices
+2. Filter by trace ID or request ID
+3. Build timeline of events
+
+### Performance Analysis
+
+Analyze slow requests:
+
+1. Search for logs with high latency
+2. Aggregate by endpoint or service
+3. Identify bottlenecks
+
+## Index Patterns
+
+Configure which indices to search:
+
+```json
+{
+  "tools": {
+    "elasticsearch": {
+      "index_pattern": "logs-*",
+      "default_time_field": "@timestamp"
+    }
+  }
+}
+```
+
+### Multiple Index Patterns
+
+```json
+{
+  "tools": {
+    "elasticsearch": {
+      "index_patterns": {
+        "application": "app-logs-*",
+        "system": "syslog-*",
+        "audit": "audit-*"
+      }
+    }
+  }
+}
+```
+
+## Required Permissions
+
+Create a role with these permissions:
+
+```json
+{
+  "cluster": ["monitor"],
+  "indices": [
+    {
+      "names": ["logs-*"],
+      "privileges": ["read", "view_index_metadata"]
+    }
+  ]
+}
+```
+
+## Troubleshooting
+
+### Connection Issues
+
+```
+Error: Unable to connect to Elasticsearch
+```
+
+**Solutions:**
+1. Verify hosts are reachable
+2. Check SSL/TLS configuration
+3. Verify authentication credentials
+
+### Slow Queries
+
+For large datasets:
+
+```json
+{
+  "tools": {
+    "elasticsearch": {
+      "timeout": "60s",
+      "max_results": 1000
+    }
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Log Analysis" icon="file-lines" href="/tools/log-analysis">
+    Advanced log analysis tools
+  </Card>
+  <Card title="Splunk" icon="chart-line" href="/data-sources/splunk">
+    Alternative log platform
+  </Card>
+</CardGroup>

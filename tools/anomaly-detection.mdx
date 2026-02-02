@@ -1,0 +1,260 @@
+---
+title: "Anomaly Detection Tools"
+description: "AI-powered anomaly detection, forecasting, and correlation analysis"
+---
+
+## Overview
+
+IncidentFox provides 8 AI/ML-powered tools for anomaly detection, forecasting, and correlation analysis. These tools use statistical methods and Facebook Prophet for sophisticated time series analysis.
+
+## Tools Available
+
+| Tool | Description |
+|------|-------------|
+| `detect_anomalies` | Z-score statistical anomaly detection |
+| `prophet_detect_anomalies` | Prophet-based seasonal anomaly detection |
+| `find_change_point` | Identify when metrics behavior changed |
+| `correlate_metrics` | Find relationships between metrics |
+| `forecast_metric` | Capacity planning forecasts |
+| `prophet_forecast` | Prophet-based seasonal forecasting |
+| `prophet_decompose` | Decompose trend, seasonality, residuals |
+| `analyze_metric_distribution` | Statistical distribution analysis |
+
+## detect_anomalies
+
+Z-score based anomaly detection for quick analysis:
+
+```
+@incidentfox detect anomalies in the payments service latency
+```
+
+**How it works:**
+1. Calculates mean and standard deviation
+2. Identifies points > N standard deviations from mean
+3. Returns anomalous time periods
+
+**Configuration:**
+```json
+{
+  "anomaly_detection": {
+    "z_score_threshold": 3.0,
+    "min_data_points": 100
+  }
+}
+```
+
+## prophet_detect_anomalies
+
+Seasonal anomaly detection using Facebook Prophet:
+
+```
+@incidentfox use prophet to detect anomalies in CPU usage accounting for daily patterns
+```
+
+**Advantages over Z-score:**
+- Accounts for seasonality (daily, weekly patterns)
+- Handles trends
+- Provides uncertainty intervals
+- Better for business metrics with patterns
+
+**Returns:**
+- Anomalous periods with confidence scores
+- Expected vs actual values
+- Uncertainty bounds
+
+## find_change_point
+
+Identify when metric behavior fundamentally changed:
+
+```
+@incidentfox when did the error rate behavior change?
+```
+
+**Use cases:**
+- Identify incident start time
+- Detect deployment impacts
+- Find gradual degradation onset
+
+**Returns:**
+```json
+{
+  "change_points": [
+    {
+      "timestamp": "2024-01-15T14:32:00Z",
+      "confidence": 0.95,
+      "metric_before": 0.01,
+      "metric_after": 0.15,
+      "description": "Error rate increased 15x"
+    }
+  ]
+}
+```
+
+## correlate_metrics
+
+Find relationships between metrics:
+
+```
+@incidentfox correlate latency with CPU usage and database connections
+```
+
+**Analysis:**
+- Pearson correlation coefficient
+- Lag correlation (time-shifted relationships)
+- Causal direction hints
+
+**Returns:**
+```json
+{
+  "correlations": [
+    {
+      "metric_a": "latency_p99",
+      "metric_b": "db_connections",
+      "correlation": 0.87,
+      "lag_seconds": 30,
+      "description": "DB connections lead latency by 30s"
+    }
+  ]
+}
+```
+
+## forecast_metric
+
+Linear forecasting for capacity planning:
+
+```
+@incidentfox forecast disk usage for the next 7 days
+```
+
+**Returns:**
+- Predicted values with confidence intervals
+- Time to threshold (e.g., "disk full in 5 days")
+- Trend direction and rate
+
+## prophet_forecast
+
+Sophisticated seasonal forecasting:
+
+```
+@incidentfox use prophet to forecast request volume for next week
+```
+
+**Capabilities:**
+- Daily and weekly seasonality
+- Holiday effects
+- Trend changes
+- Uncertainty quantification
+
+## prophet_decompose
+
+Decompose time series into components:
+
+```
+@incidentfox decompose the traffic pattern to show trend and seasonality
+```
+
+**Returns:**
+- Trend component
+- Seasonal component (daily, weekly)
+- Residual (unexplained variation)
+
+**Use cases:**
+- Understand underlying patterns
+- Separate signal from noise
+- Identify true anomalies vs seasonal variation
+
+## analyze_metric_distribution
+
+Statistical distribution analysis:
+
+```
+@incidentfox analyze the latency distribution for the API service
+```
+
+**Returns:**
+- Percentiles (p50, p90, p95, p99)
+- Mean, median, mode
+- Standard deviation
+- Distribution shape (normal, skewed, bimodal)
+
+## Configuration
+
+### Global Settings
+
+```json
+{
+  "anomaly_detection": {
+    "default_lookback": "24h",
+    "z_score_threshold": 3.0,
+    "prophet_enabled": true,
+    "seasonality_mode": "multiplicative"
+  }
+}
+```
+
+### Prophet Settings
+
+```json
+{
+  "prophet": {
+    "daily_seasonality": true,
+    "weekly_seasonality": true,
+    "yearly_seasonality": false,
+    "changepoint_prior_scale": 0.05
+  }
+}
+```
+
+## Use Cases
+
+### Incident Investigation
+
+1. Use `find_change_point` to identify when issue started
+2. Apply `detect_anomalies` to find related metric spikes
+3. Use `correlate_metrics` to identify root cause
+
+### Capacity Planning
+
+1. Use `prophet_forecast` to predict growth
+2. Identify time to capacity threshold
+3. Plan scaling actions
+
+### Pattern Understanding
+
+1. Use `prophet_decompose` to understand patterns
+2. Separate business cycles from anomalies
+3. Set appropriate alerting thresholds
+
+## Best Practices
+
+### Data Quality
+
+- Ensure sufficient historical data (minimum 2 weeks for Prophet)
+- Handle missing data points
+- Remove known maintenance windows
+
+### Threshold Selection
+
+| Use Case | Z-Score Threshold |
+|----------|-------------------|
+| Strict alerting | 2.0 |
+| Normal alerting | 3.0 |
+| Loose alerting | 4.0 |
+
+### Seasonality
+
+Enable appropriate seasonality for your metrics:
+- API traffic: daily + weekly
+- Batch jobs: specific schedule
+- Infrastructure: often no seasonality
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Log Analysis" icon="file-lines" href="/tools/log-analysis">
+    Combine with log analysis
+  </Card>
+  <Card title="Prometheus" icon="chart-line" href="/data-sources/prometheus">
+    Query Prometheus metrics
+  </Card>
+</CardGroup>

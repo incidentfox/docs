@@ -15,33 +15,62 @@ IncidentFox connects to your existing observability and data platforms to invest
 |----------|--------|--------------|
 | [Coralogix](/data-sources/coralogix) | Supported | Log search, metrics, alerts, Olly integration |
 | [Datadog](/data-sources/datadog) | Supported | Metrics, logs, APM traces |
-| [Grafana](/data-sources/grafana) | Supported | Prometheus queries, dashboards, alerts |
-| New Relic | Supported | NRQL queries, APM summary |
-| Elasticsearch | Supported | Log search, aggregations |
+| [Grafana](/data-sources/grafana) | Supported | Prometheus queries, dashboards, alerts, annotations |
+| [Prometheus](/data-sources/prometheus) | Supported | PromQL queries, instant queries, alerts |
+| [Sentry](/data-sources/sentry) | Supported | Error tracking, issues, project stats, releases |
+| [New Relic](/data-sources/newrelic) | Supported | NRQL queries, APM summary |
+| [Elasticsearch](/data-sources/elasticsearch) | Supported | Log search, aggregations |
+| [Splunk](/data-sources/splunk) | Supported | SPL queries, log search |
+| Loki | Supported | LogQL queries |
 
 ### Cloud Providers
 
 | Platform | Status | Capabilities |
 |----------|--------|--------------|
 | [AWS](/data-sources/aws) | Supported | CloudWatch, EC2, Lambda, RDS, ECS, CodePipeline |
-| GCP | Roadmap | Cloud Logging, GKE, Cloud Run |
-| Azure | Roadmap | Monitor, AKS, Functions |
+| [Azure](/data-sources/azure) | Supported | Monitor, VMs, App Services |
+| [GCP](/data-sources/gcp) | Supported | Cloud Logging, Compute, Cloud Run |
 
 ### Infrastructure
 
 | Platform | Status | Capabilities |
 |----------|--------|--------------|
 | [Kubernetes](/data-sources/kubernetes) | Supported | Pod logs, events, deployments, metrics |
-| Docker | Supported | Container logs, exec, compose |
+| [Docker](/data-sources/docker) | Supported | Container logs, exec, stats, events, inspect (15 tools) |
+| Terraform | Supported | State inspection, planning |
 
-### Data & CI/CD
+### Databases
 
 | Platform | Status | Capabilities |
 |----------|--------|--------------|
 | [Snowflake](/data-sources/snowflake) | Supported | SQL queries, data enrichment |
-| GitHub | Supported | Code search, PRs, Actions, webhooks |
-| Confluence | Supported | Documentation search |
+| [PostgreSQL](/data-sources/postgresql) | Supported | Query execution, schema inspection |
+| [MySQL](/data-sources/mysql) | Supported | Query execution, schema inspection |
+| [BigQuery](/data-sources/bigquery) | Supported | SQL queries, analytics |
+
+### Code & CI/CD
+
+| Platform | Status | Capabilities |
+|----------|--------|--------------|
+| GitHub | Supported | Code search, PRs, Actions, commits, webhooks (16 tools) |
+| GitLab | Supported | Repositories, merge requests |
+| Jenkins | Supported | Build status, logs |
+
+### Documentation & Knowledge
+
+| Platform | Status | Capabilities |
+|----------|--------|--------------|
+| Confluence | Supported | Wiki search, page retrieval |
+| Notion | Supported | Workspace search |
 | Google Docs | Supported | Runbook search |
+
+### Messaging & Streaming
+
+| Platform | Status | Capabilities |
+|----------|--------|--------------|
+| Kafka | Supported | Topic inspection, consumer lag |
+| Debezium | Supported | CDC monitoring |
+| Schema Registry | Supported | Schema management |
 
 ## Data Source Architecture
 
@@ -52,12 +81,16 @@ graph TD
     B[AWS Agent]
     C[Metrics Agent]
     D[Coding Agent]
+    E[Investigation Agent]
     end
-    A --> E[Kubernetes Cluster]
-    B --> F[AWS CloudWatch]
-    C --> G[Coralogix/Datadog/Grafana]
-    D --> H[GitHub Repos]
-    G --> I[Snowflake<br/>enrich]
+    A --> F[Kubernetes Cluster]
+    A --> G[Docker]
+    B --> H[AWS CloudWatch/EC2/RDS]
+    C --> I[Prometheus/Grafana/Datadog]
+    C --> J[Sentry/New Relic]
+    D --> K[GitHub/GitLab]
+    E --> L[Elasticsearch/Splunk]
+    E --> M[Snowflake/PostgreSQL/BigQuery]
 ```
 
 ## Credential Management
@@ -116,11 +149,17 @@ Each data source requires specific permissions. Generally, IncidentFox needs **r
 | Data Source | Required Permissions |
 |-------------|---------------------|
 | Coralogix | API key with read access |
-| AWS | CloudWatch read, EC2 describe, RDS read |
+| AWS | CloudWatch read, EC2 describe, RDS read, Lambda read |
 | Kubernetes | Pod logs, events, describe resources |
 | GitHub | Repo read, issues read, PRs read |
 | Snowflake | SELECT on relevant tables |
 | Datadog | API key + App key with read access |
+| Prometheus | Query access to /api/v1/query endpoint |
+| Grafana | Viewer role, API key with read access |
+| Sentry | Project read, issue read |
+| Elasticsearch | Read access to indices |
+| PostgreSQL | SELECT on relevant tables |
+| Docker | Docker socket access or API access |
 
 <Tip>
 **Principle of least privilege**: Only grant permissions that are necessary for investigation. IncidentFox doesn't need write access unless you enable auto-remediation.
