@@ -1,0 +1,168 @@
+---
+title: "Docker"
+description: "Connect IncidentFox to Docker for container troubleshooting"
+---
+
+## Overview
+
+IncidentFox provides 15 Docker tools for comprehensive container debugging, including logs, stats, exec, and inspection capabilities.
+
+## Tools Available
+
+| Tool | Description |
+|------|-------------|
+| `docker_ps` | List running containers |
+| `docker_logs` | Fetch container logs |
+| `docker_inspect` | Inspect container configuration |
+| `docker_stats` | Get container resource usage |
+| `docker_top` | Show running processes in container |
+| `docker_events` | Stream Docker events |
+| `docker_diff` | Show filesystem changes in container |
+| `docker_exec` | Execute command in running container |
+| `docker_images` | List Docker images |
+| `docker_networks` | List Docker networks |
+| `docker_volumes` | List Docker volumes |
+| `docker_compose_ps` | List Compose services |
+| `docker_compose_logs` | Get Compose service logs |
+| `docker_health` | Check container health status |
+| `docker_port` | Show port mappings |
+
+## Configuration
+
+### Local Docker Socket
+
+```json
+{
+  "tools": {
+    "docker": {
+      "enabled": true,
+      "socket": "/var/run/docker.sock"
+    }
+  }
+}
+```
+
+### Remote Docker API
+
+```json
+{
+  "tools": {
+    "docker": {
+      "enabled": true,
+      "host": "tcp://docker-host:2376",
+      "tls_verify": true,
+      "cert_path": "/path/to/certs"
+    }
+  }
+}
+```
+
+## Example Queries
+
+### Check Container Status
+
+```
+@incidentfox what containers are running on the app server?
+```
+
+### Get Container Logs
+
+```
+@incidentfox show me logs from the nginx container for the last 30 minutes
+```
+
+### Check Resource Usage
+
+```
+@incidentfox what is the CPU and memory usage of the api container?
+```
+
+### Execute Diagnostic Command
+
+```
+@incidentfox run 'netstat -an' in the web container
+```
+
+<Warning>
+The `docker_exec` tool requires explicit enablement due to security implications. It's disabled by default.
+</Warning>
+
+## Use Cases
+
+### Container Health Investigation
+
+When a container is unhealthy:
+
+1. Check container status with `docker_ps`
+2. Review logs with `docker_logs`
+3. Inspect configuration with `docker_inspect`
+4. Check resource usage with `docker_stats`
+
+### Network Debugging
+
+For connectivity issues:
+
+1. List networks with `docker_networks`
+2. Inspect container network settings
+3. Use `docker_exec` to run network diagnostics
+
+### Resource Exhaustion
+
+When containers are slow or crashing:
+
+1. Check `docker_stats` for CPU/memory usage
+2. Review `docker_events` for OOM kills
+3. Analyze `docker_diff` for unexpected file changes
+
+## Security Considerations
+
+### Principle of Least Privilege
+
+| Tool | Risk Level | Recommendation |
+|------|-----------|----------------|
+| `docker_ps`, `docker_logs` | Low | Enable by default |
+| `docker_stats`, `docker_inspect` | Low | Enable by default |
+| `docker_exec` | High | Require approval workflow |
+| `docker_events` | Medium | Enable with monitoring |
+
+### Approval Workflow for Exec
+
+```json
+{
+  "tools": {
+    "docker_exec": {
+      "enabled": true,
+      "require_approval": true,
+      "allowed_commands": ["ps", "netstat", "cat /etc/hosts"]
+    }
+  }
+}
+```
+
+## Troubleshooting
+
+### Permission Denied
+
+```
+Error: permission denied while trying to connect to Docker socket
+```
+
+**Solutions:**
+1. Add the IncidentFox service user to the `docker` group
+2. Use TCP API with proper authentication
+3. Use sudo with proper configuration
+
+### Container Not Found
+
+Ensure container names or IDs are correct. Use `docker_ps` to list available containers.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Kubernetes" icon="dharmachakra" href="/data-sources/kubernetes">
+    For orchestrated containers
+  </Card>
+  <Card title="Log Analysis" icon="file-lines" href="/tools/log-analysis">
+    Advanced log analysis tools
+  </Card>
+</CardGroup>
