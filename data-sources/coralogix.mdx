@@ -20,61 +20,57 @@ Coralogix is a full-stack observability platform. IncidentFox integrates with Co
 
 ## Configuration
 
-### Step 1: Generate API Key
+### Step 1: Create a Coralogix API Key
 
 1. Log in to your Coralogix dashboard
-2. Navigate to **Data Flow** > **API Keys**
-3. Click **Generate New Key**
-4. Select scopes:
-   - `logs:read`
-   - `metrics:read`
-   - `alerts:read`
-5. Copy the generated key
-
-<Warning>
-Store the API key immediately - it won't be shown again.
-</Warning>
+2. Navigate to **Settings** (left navbar) > **API Keys**
+3. Click **+ Team Key** (bottom right)
+4. Configure the key:
+   - **Key name:** `IncidentFox` (or any descriptive name)
+   - **Role Presets:** Select `DataQuerying`
+5. Click **Create**
+6. Copy the API key
 
 ### Step 2: Identify Your Domain
 
-Coralogix has regional domains:
+Your Coralogix domain is shown in your browser URL when logged in (e.g., `app.eu2.coralogix.com`).
 
-| Region | Domain |
-|--------|--------|
-| US | `coralogix.com` |
-| EU | `eu2.coralogix.com` |
-| India | `app.coralogix.in` |
-| Singapore | `coralogixsg.com` |
+Coralogix regional domains:
 
-### Step 3: Add to IncidentFox
+| Region | Team Login URL |
+|--------|----------------|
+| EU1 (Ireland) | `coralogix.com` |
+| EU2 (Stockholm) | `app.eu2.coralogix.com` |
+| US1 (Ohio) | `app.coralogix.us` |
+| US2 (Oregon) | `app.cx498.coralogix.com` |
+| AP1 (India) | `app.coralogix.in` |
+| AP2 (Singapore) | `app.coralogixsg.com` |
+| AP3 (Jakarta) | `app.ap3.coralogix.com` |
 
-**Via Web UI:**
+### Step 3: Connect to IncidentFox
 
-1. Go to **Team Console** > **Integrations**
-2. Click **Add Integration** > **Coralogix**
-3. Enter:
-   - API Key
-   - Domain
-   - Default Application (optional)
-   - Default Subsystem (optional)
-4. Click **Test Connection**
-5. Save
+<Tip>
+See [Configuring Data Sources](/integrations/slack#configuring-data-sources) for general instructions on opening the configuration panel in Slack.
+</Tip>
 
-**Via Configuration:**
+1. Open the IncidentFox app in Slack (click the bot's avatar → **Open App**)
+2. Under **Available Integrations**, find Coralogix and click **Connect** (or **Edit** if already configured)
+3. In the modal:
+   - Watch the **video walkthrough** for step-by-step guidance
+   - Paste your **API Key**
+   - Select your **Domain** from the dropdown (based on your Coralogix URL)
+   - Optionally, add **Custom Context** to help the AI understand your Coralogix setup (e.g., application names, team conventions, important subsystems)
+4. Click **Save**
 
-```json
-{
-  "tools": {
-    "coralogix": {
-      "enabled": true,
-      "api_key": "vault://secrets/coralogix-api-key",
-      "domain": "coralogix.com",
-      "default_application": "production",
-      "default_subsystem": "backend"
-    }
-  }
-}
-```
+### Custom Context for AI (Optional)
+
+The **Context for AI** field lets you provide additional information that helps IncidentFox investigate more effectively. Examples:
+
+- "Our main applications are `payments-api` and `checkout-service`"
+- "Production logs use subsystem `prod-backend`, staging uses `staging-backend`"
+- "Critical alerts come from the `sre-alerts` application"
+
+This context is provided to the AI during investigations to help it query the right data.
 
 ## Available Tools
 
@@ -153,21 +149,6 @@ IncidentFox can:
 1. Query Coralogix data directly
 2. Request Olly's analysis of specific issues
 3. Combine Olly's insights with data from other sources
-
-### Enabling Olly Integration
-
-```json
-{
-  "tools": {
-    "coralogix": {
-      "enabled": true,
-      "api_key": "vault://secrets/coralogix-api-key",
-      "domain": "coralogix.com",
-      "olly_enabled": true
-    }
-  }
-}
-```
 
 ### Example: Combined Investigation
 
@@ -248,10 +229,44 @@ IncidentFox will:
 
 ## Security Considerations
 
-- API keys should have **read-only** permissions
+### What IncidentFox Can Access
+
+The `DataQuerying` preset grants these **read-only** capabilities:
+
+| Permission | Purpose |
+|------------|---------|
+| Query Data from the Archive | Search historical data |
+| Query Frequent Search Logs | Search and analyze log data |
+| Query Monitoring & Compliance Logs | Query compliance-tier logs |
+| Query Metrics | Correlate metrics with incidents |
+| Query Frequent Search Spans | Trace requests across services |
+| Query Monitoring & Compliance Spans | Query compliance-tier traces |
+| View CPU profiling data | View profiling information |
+
+### What IncidentFox Cannot Do
+
+- Create, modify, or delete alerts
+- Change any Coralogix configurations
+- Access team admin settings
+- Manage API keys or users
+- Send or ingest data
+
+### Best Practices
+
+- **All permissions are read-only** - no write or management access
+- **You control the key** - revoke anytime from your Coralogix dashboard
+- **No data storage** - IncidentFox queries on-demand; logs stay in Coralogix
 - Store keys in your secrets manager
 - Rotate keys periodically
 - Monitor API usage for anomalies
+
+### Revoking Access
+
+To revoke IncidentFox's access at any time:
+
+1. Go to **Settings** > **API Keys** in your Coralogix dashboard
+2. Find the `IncidentFox` key
+3. Click **Delete**
 
 ## Next Steps
 

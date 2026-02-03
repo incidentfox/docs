@@ -125,6 +125,46 @@ Recommendations:
 3. Consider rollback if issue persists
 ```
 
+## Configuring Data Sources
+
+Once the IncidentFox bot is installed, team members can configure data source integrations directly from Slack.
+
+### Opening the Configuration Panel
+
+There are two ways to access the configuration panel:
+
+**Option 1: Welcome Message**
+
+When IncidentFox joins a new channel, it posts a welcome message with a **Configure** button. Click this button to open the configuration panel.
+
+**Option 2: App Home**
+
+1. Click on the IncidentFox bot's avatar in any channel
+2. Click **Open App**
+3. You'll see:
+   - **Connected Integrations** - Data sources already configured (click **Edit** to modify)
+   - **Available Integrations** - Data sources you can add (click **Connect** to set up)
+
+### Configuration Modal
+
+When you click **Connect** or **Edit** for any integration, a modal appears with:
+
+1. **Video Walkthrough** - Step-by-step guide for setting up the integration
+2. **Setup Instructions** - Quick reference for creating API keys
+3. **Configuration Fields** - API key, domain, and integration-specific settings
+4. **Custom Context (Optional)** - Additional context to help the AI understand your setup
+
+<Note>
+Credentials are encrypted and stored securely. You can revoke access at any time by deleting the integration.
+</Note>
+
+See individual data source pages for specific setup instructions:
+- [Coralogix](/data-sources/coralogix) - Log search, metrics, and alerts
+- [Datadog](/data-sources/datadog) - Metrics, logs, and APM
+- [AWS](/data-sources/aws) - CloudWatch and infrastructure
+
+---
+
 ## Configuration
 
 ### Default Slack Channel
