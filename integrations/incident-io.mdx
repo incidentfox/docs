@@ -3,6 +3,16 @@ title: "Incident.io"
 description: "Integrate IncidentFox with Incident.io for automated incident response"
 ---
 
+<iframe
+  width="560"
+  height="315"
+  src="https://player.vimeo.com/video/1161602255"
+  title="Setting up Incident.io Integration"
+  frameborder="0"
+  allow="autoplay; fullscreen; picture-in-picture"
+  allowfullscreen
+></iframe>
+
 ## Overview
 
 Incident.io integration enables IncidentFox to:
@@ -11,66 +21,109 @@ Incident.io integration enables IncidentFox to:
 - Post findings to incident channels
 - Enrich incident timelines with investigation data
 - Correlate incidents with recent changes
+- Access incident history and context
 
 ## Prerequisites
 
 - Incident.io account with API access
-- Webhook configuration permissions
+- API key with read permissions
 - Slack integration configured (for responses)
 
-## Setup
+## Configuration
 
-### Step 1: Configure Webhook
+### Step 1: Create an Incident.io API Key
 
-1. Log in to Incident.io
-2. Go to **Settings** > **Integrations** > **Webhooks**
-3. Click **Add Webhook**
-4. Configure:
-   - **URL**: `https://api.incidentfox.ai/api/incident-io/webhook`
-   - **Events**: `incident.created`, `incident.updated`
-5. Copy the signing secret
-6. Save
+1. Go to your incident.io home dashboard
+2. Click the settings gear icon at the bottom of the left navbar (next to your name)
+3. Scroll down to the *Extend* section and click *API keys*
+4. Click *Add New* (top right)
+5. Click *View data...* (the first permission option)
+6. Name your API key appropriately, scroll down, and click *Create*
+7. Copy the API key
 
-### Step 2: Add to IncidentFox
+### Step 2: Connect to IncidentFox
 
-```json
-{
-  "integrations": {
-    "incident_io": {
-      "enabled": true,
-      "webhook_secret": "vault://secrets/incident-io-webhook-secret",
-      "auto_investigate": true,
-      "severity_threshold": "high"
-    }
-  }
-}
+<Tip>
+See [Configuring Data Sources](/integrations/slack#configuring-data-sources) for general instructions on opening the configuration panel in Slack.
+</Tip>
+
+1. Open the IncidentFox app in Slack (click the bot's avatar → **Open App**)
+2. Under **Available Integrations**, find Incident.io and click **Connect** (or **Edit** if already configured)
+3. In the modal:
+   - Watch the **video walkthrough** for step-by-step guidance
+   - Paste your **API Key**
+   - Optionally, add **Custom Context** to help the AI understand your incident.io setup (e.g., team structure, service names, escalation patterns)
+4. Click **Save**
+
+### Custom Context for AI (Optional)
+
+The **Context for AI** field lets you provide additional information that helps IncidentFox investigate more effectively. Examples:
+
+- "Our critical services are `payments-api`, `checkout-service`, and `user-auth`"
+- "High severity incidents automatically page the SRE on-call team"
+- "We use incident.io custom fields for service ownership and deployment tracking"
+
+This context is provided to the AI during investigations to help it understand your incident management workflow.
+
+## Available Tools
+
+Once configured, these tools become available:
+
+### `get_incident_details`
+
+Retrieve detailed information about a specific incident.
+
+```
+@incidentfox get details for incident INC-123
 ```
 
-### Configuration Options
+**Parameters:**
+- `incident_id` - Incident identifier
+- `include_timeline` - Include timeline events (optional)
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `auto_investigate` | Automatically start investigation | `true` |
-| `severity_threshold` | Minimum severity to auto-investigate | `medium` |
-| `post_to_channel` | Post findings to incident channel | `true` |
-| `create_timeline_entry` | Add to incident timeline | `true` |
+### `list_recent_incidents`
+
+Get a list of recent incidents with filtering options.
+
+```
+@incidentfox show recent incidents for the checkout service
+```
+
+**Parameters:**
+- `service` - Filter by service (optional)
+- `severity` - Filter by severity (optional)
+- `status` - Active, resolved, all
+- `time_range` - Time range to search
+
+### `correlate_incidents`
+
+Find similar or related incidents based on services, error patterns, or timing.
+
+```
+@incidentfox find similar incidents to the current database timeout issue
+```
+
+**Parameters:**
+- `incident_id` - Reference incident
+- `similarity_threshold` - Match confidence level
+- `time_range` - How far back to search
 
 ## How It Works
 
 ```mermaid
 graph TD
-    A[Incident.io Webhook] --> B[IncidentFox Agent]
-    B --> C[Data Sources]
-    C --> D[Findings]
-    D --> E[Slack Channel]
-    A --> E
+    A[Incident Created] --> B[IncidentFox Query]
+    B --> C[Incident.io API]
+    C --> D[Investigation]
+    D --> E[Findings]
+    E --> F[Slack Channel]
 ```
 
 1. **Incident created** in Incident.io
-2. **Webhook fires** to IncidentFox
+2. **IncidentFox queries** incident details via API
 3. **Investigation starts** with incident context
 4. **Findings posted** to incident Slack channel
-5. **Timeline updated** with investigation summary
+5. **Timeline optionally updated** with investigation summary
 
 ## Automatic Investigation
 
@@ -130,22 +183,13 @@ Timeline:
 
 ## Timeline Integration
 
-IncidentFox can add entries to the Incident.io timeline:
+IncidentFox can automatically add entries to your Incident.io timeline during investigations:
 
-```json
-{
-  "integrations": {
-    "incident_io": {
-      "create_timeline_entry": true,
-      "timeline_entry_types": [
-        "investigation_start",
-        "root_cause_found",
-        "investigation_complete"
-      ]
-    }
-  }
-}
-```
+- **Investigation started** - When IncidentFox begins analyzing an incident
+- **Root cause identified** - When high-confidence findings are detected
+- **Investigation complete** - Final summary with recommendations
+
+These timeline entries help maintain a chronological record of the investigation process alongside your manual incident updates.
 
 ## Severity Mapping
 
@@ -156,44 +200,111 @@ IncidentFox can add entries to the Incident.io timeline:
 | Medium | P2 |
 | Low | P3 |
 
-Configure severity threshold:
+## Use Cases
 
-```json
-{
-  "integrations": {
-    "incident_io": {
-      "severity_threshold": "medium",
-      "skip_low_severity": true
-    }
-  }
-}
+### Historical Context During Incidents
+
+```
+@incidentfox check if we've had similar incidents to this checkout error
+```
+
+IncidentFox will:
+- Search incident history for similar patterns
+- Identify common root causes
+- Reference previous resolutions
+
+### Post-Incident Analysis
+
+```
+@incidentfox analyze incidents from the last quarter for the payments service
+```
+
+### Incident Correlation
+
+```
+@incidentfox check if the current incident correlates with recent deployments
 ```
 
 ## Best Practices
 
 <Tip>
-Set up IncidentFox investigation as one of your first actions in the incident workflow.
+**Include service names and error patterns** in incident descriptions to help IncidentFox find relevant historical data.
 </Tip>
 
-1. **Include service names** in incident titles
-2. **Add PagerDuty context** when creating incidents
-3. **Use structured descriptions** for better parsing
-4. **Review and iterate** on auto-investigation findings
+1. **Use consistent service naming** across incident.io and your infrastructure
+2. **Tag incidents properly** for better correlation
+3. **Add PagerDuty context** when creating incidents
+4. **Use structured descriptions** for better parsing
+5. **Review similar incidents** before diving into investigation
+
+## Security Considerations
+
+### What IncidentFox Can Access
+
+The API key with "View data" permissions grants these **read-only** capabilities:
+
+| Permission | Purpose |
+|------------|---------|
+| View incidents | Access incident details and history |
+| View timelines | Read incident timeline events |
+| View custom fields | Access service metadata |
+| View users and teams | Understand on-call assignments |
+
+### What IncidentFox Cannot Do
+
+- Create, modify, or delete incidents
+- Change incident status or severity
+- Update postmortems or retrospectives
+- Manage API keys or users
+- Access or modify workflows
+- Change team settings
+
+### Best Practices
+
+- **All permissions are read-only** - no write or management access
+- **You control the key** - revoke anytime from your incident.io dashboard
+- **No data storage** - IncidentFox queries on-demand; data stays in incident.io
+- Store keys in your secrets manager
+- Rotate keys periodically
+- Monitor API usage for anomalies
+
+### Revoking Access
+
+To revoke IncidentFox's access at any time:
+
+1. Go to your incident.io home dashboard
+2. Click the settings gear icon at the bottom of the left navbar
+3. Navigate to *Extend* > *API keys*
+4. Find the IncidentFox key and click **Delete**
 
 ## Troubleshooting
 
-### Webhook Not Triggering
+### Connection Failed
 
-1. Verify webhook URL is correct
-2. Check signing secret matches
-3. Review Incident.io webhook logs
-4. Ensure events are selected
+**Symptom:** "Unable to connect to Incident.io API"
 
-### Missing Findings
+**Solutions:**
+1. Verify API key is valid and not expired
+2. Check that "View data" permission was granted
+3. Ensure network allows outbound HTTPS to incident.io
 
-1. Check data source connectivity
-2. Verify services are named correctly
-3. Review investigation logs in Web UI
+### Missing Incident Data
+
+**Symptom:** IncidentFox can't find incidents
+
+**Solutions:**
+1. Verify incident IDs are correct
+2. Check time range - incidents may be outside the range
+3. Ensure service names match those used in incident.io
+
+### Rate Limiting
+
+**Symptom:** "Rate limit exceeded" errors
+
+**Solutions:**
+1. Reduce query frequency
+2. Use more specific filters (service, severity, time range)
+3. Contact incident.io support to increase limits
 
 ## Next Steps
 
