@@ -45,7 +45,8 @@
               "integrations/slack",
               "integrations/github",
               "integrations/pagerduty",
-              "integrations/incident-io"
+              "integrations/incident-io",
+              "integrations/kubernetes-agent"
             ]
           },
           {
